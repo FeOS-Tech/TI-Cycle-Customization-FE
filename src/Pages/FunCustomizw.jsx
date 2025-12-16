@@ -1,25 +1,35 @@
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import html2canvas from "html2canvas";
 import { CUSTOM_API,THEME_API_BASE } from "../config/api";
+
+// ---------- Font ready cache (only once) ----------
+let fontsReadyPromise = null;
+function waitForFontsOnce() {
+  if (!document.fonts?.ready) return Promise.resolve();
+  if (!fontsReadyPromise) {
+    fontsReadyPromise = document.fonts.ready.catch(() => {});
+  }
+  return fontsReadyPromise;
+}
 
 function FunCustomize() {
   const { slug } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
   const previewRef = useRef(null);
+  const nameRef = useRef(null);
+  const taglineRef = useRef(null);
+  const imageCacheRef = useRef(new Map()); // cache for images
 
-  // From Customization page
+  // We expect these from Customization page
   const fromState = location.state || {};
   const initialCustomization = fromState.customization || null;
   const customizationIdFromState =
     fromState.customizationId || initialCustomization?._id || null;
 
   const [custom, setCustom] = useState(initialCustomization);
-  const [customizationId, setCustomizationId] = useState(
-    customizationIdFromState
-  );
+  const [customizationId] = useState(customizationIdFromState);
 
   const [theme, setTheme] = useState(null);
   const [loading, setLoading] = useState(!initialCustomization);
@@ -30,33 +40,66 @@ function FunCustomize() {
   const [tagline, setTagline] = useState(
     initialCustomization?.tagline || "TAGLINE HERE"
   );
-  const [themeVariant, setThemeVariant] = useState(
-    initialCustomization?.themeVariant || "primary"
-  ); // primary / secondary
 
   // Part selections (indices)
   const [frameIdx, setFrameIdx] = useState(
-    initialCustomization?.frameColorIndex || 0
+    Number.isInteger(initialCustomization?.frameColorIndex)
+      ? initialCustomization.frameColorIndex
+      : 0
   );
-  const [gripIdx, setGripIdx] = useState(0);
-  const [mudguardIdx, setMudguardIdx] = useState(0);
-  const [brakeIdx, setBrakeIdx] = useState(0);
-  const [basketIdx, setBasketIdx] = useState(0);
-  const [backrestIdx, setBackrestIdx] = useState(0);
+  const [gripIdx, setGripIdx] = useState(
+    Number.isInteger(initialCustomization?.gripColorIndex)
+      ? initialCustomization.gripColorIndex
+      : 0
+  );
+  const [mudguardIdx, setMudguardIdx] = useState(
+    Number.isInteger(initialCustomization?.mudguardColorIndex)
+      ? initialCustomization.mudguardColorIndex
+      : 0
+  );
+  const [brakeIdx, setBrakeIdx] = useState(
+    Number.isInteger(initialCustomization?.brakeColorIndex)
+      ? initialCustomization.brakeColorIndex
+      : 0
+  );
 
   // Which component panel is open
   const [openPanel, setOpenPanel] = useState("frame");
 
-  // Sticker colour hex values (recolour on top of carPaint / carDecal / highlight)
+  // ✅ RGB picker values (source of truth)
+  // IMPORTANT: use "" when not chosen -> no auto-white
   const [paintHex, setPaintHex] = useState(
-    initialCustomization?.stickerColors?.carPaintHex || "#ffffff"
+    initialCustomization?.stickerColors?.carPaintHex || ""
   );
   const [decalHex, setDecalHex] = useState(
-    initialCustomization?.stickerColors?.carDecalHex || "#ffffff"
+    initialCustomization?.stickerColors?.carDecalHex || ""
   );
-  const [highlightHex, setHighlightHex] = useState(
-    initialCustomization?.stickerColors?.highlightHex || "#ffffff"
+  const [primaryHex, setPrimaryHex] = useState(
+    initialCustomization?.stickerColors?.primaryHex || ""
   );
+  const [secondaryHex, setSecondaryHex] = useState(
+    initialCustomization?.stickerColors?.secondaryHex || ""
+  );
+
+  // ✅ enabled flags: tint ONLY after user picks color
+  const [paintEnabled, setPaintEnabled] = useState(
+    !!initialCustomization?.stickerColors?.carPaintHex
+  );
+  const [decalEnabled, setDecalEnabled] = useState(
+    !!initialCustomization?.stickerColors?.carDecalHex
+  );
+  const [primaryEnabled, setPrimaryEnabled] = useState(
+    !!initialCustomization?.stickerColors?.primaryHex
+  );
+  const [secondaryEnabled, setSecondaryEnabled] = useState(
+    !!initialCustomization?.stickerColors?.secondaryHex
+  );
+
+  // CMYK derived (for saving)
+  const paintCmyk = useMemo(() => (paintHex ? hexToCmyk(paintHex) : null), [paintHex]);
+  const decalCmyk = useMemo(() => (decalHex ? hexToCmyk(decalHex) : null), [decalHex]);
+  const primaryCmyk = useMemo(() => (primaryHex ? hexToCmyk(primaryHex) : null), [primaryHex]);
+  const secondaryCmyk = useMemo(() => (secondaryHex ? hexToCmyk(secondaryHex) : null), [secondaryHex]);
 
   // ---------------- Helper: get part by code ----------------
   const getPartByCode = (code) => {
@@ -79,12 +122,27 @@ function FunCustomize() {
 
         setName(data.userName || "NAMENAME");
         setTagline(data.tagline || "TAGLINE HERE");
-        setThemeVariant(data.themeVariant || "primary");
-        setFrameIdx(data.frameColorIndex || 0);
 
-        setPaintHex(data.stickerColors?.carPaintHex || "#ffffff");
-        setDecalHex(data.stickerColors?.carDecalHex || "#ffffff");
-        setHighlightHex(data.stickerColors?.highlightHex || "#ffffff");
+        setFrameIdx(Number.isInteger(data.frameColorIndex) ? data.frameColorIndex : 0);
+        setGripIdx(Number.isInteger(data.gripColorIndex) ? data.gripColorIndex : 0);
+        setMudguardIdx(Number.isInteger(data.mudguardColorIndex) ? data.mudguardColorIndex : 0);
+        setBrakeIdx(Number.isInteger(data.brakeColorIndex) ? data.brakeColorIndex : 0);
+
+        // restore saved colors if present
+        const p = data.stickerColors?.carPaintHex || "";
+        const d = data.stickerColors?.carDecalHex || "";
+        const pr = data.stickerColors?.primaryHex || "";
+        const s = data.stickerColors?.secondaryHex || "";
+
+        setPaintHex(p);
+        setDecalHex(d);
+        setPrimaryHex(pr);
+        setSecondaryHex(s);
+
+        setPaintEnabled(!!p);
+        setDecalEnabled(!!d);
+        setPrimaryEnabled(!!pr);
+        setSecondaryEnabled(!!s);
       } catch (err) {
         console.error("Customization load error:", err);
       } finally {
@@ -128,82 +186,174 @@ function FunCustomize() {
     );
   }
 
-  // ---------------- Extract base data from customization ----------------
-  const {
-    brand,
-    themeName,
-    cycleName,
-    modelNo,
-    images = {},
-    mode = "fun",
-  } = custom;
+  // ✅ Stickers MUST be locked from DB (stickersRaw preferred)
+  const stickers = custom.stickersRaw || custom.images || {};
 
-  const baseBikeImage = images.baseBikeImage;
-  const carBase = images.carBase;
-  const carPaint = images.carPaint;
-  const carDecal = images.carDecal;
-  const primarySticker = images.primaryColour;
-  const secondarySticker = images.secondaryColour;
-  const logo = images.logo;
+  const baseBikeImage =
+    stickers.selectedBaseImage || custom.images?.baseBikeImage || null;
 
-  const activeHighlightImage =
-    themeVariant === "primary"
-      ? primarySticker || secondarySticker
-      : secondarySticker || primarySticker;
+  const carBase = stickers.carBase || null;
+  const carPaintMask = stickers.carPaint || null;
+  const carDecalMask = stickers.carDecal || null;
+  const primaryMask = stickers.primaryColour || null;
+  const secondaryMask = stickers.secondaryColour || null;
+  const logo = stickers.logo || null;
 
-  // ---------------- Parts from theme-config ----------------
-  // from your JSON:
-  // C02 = Mudguard, C03 = Backrest, C04 = Basket, C05 = Grip, C06 = Brake lever, F01 = Frame
+  // ---------------- Parts from theme-config (frame / grip / mudguard / brake) ----------------
   const framePart = getPartByCode("F01");
   const gripPart = getPartByCode("C05");
   const mudguardPart = getPartByCode("C02");
   const brakePart = getPartByCode("C06");
-  const backrestPart = getPartByCode("C03");
-  const basketPart = getPartByCode("C04");
 
-  const frameColor =
-    framePart.colors?.[frameIdx] || framePart.colors?.[0] || null;
-  const gripColor =
-    gripPart.colors?.[gripIdx] || gripPart.colors?.[0] || null;
-  const mudguardColor =
-    mudguardPart.colors?.[mudguardIdx] || mudguardPart.colors?.[0] || null;
-  const brakeColor =
-    brakePart.colors?.[brakeIdx] || brakePart.colors?.[0] || null;
-  const backrestColor =
-    backrestPart.colors?.[backrestIdx] || backrestPart.colors?.[0] || null;
-  const basketColor =
-    basketPart.colors?.[basketIdx] || basketPart.colors?.[0] || null;
+  const frameOverlay = framePart.colors?.[frameIdx]?.imageUrl || null;
+  const gripOverlay = gripPart.colors?.[gripIdx]?.imageUrl || null;
+  const mudguardOverlay = mudguardPart.colors?.[mudguardIdx]?.imageUrl || null;
+  const brakeOverlay = brakePart.colors?.[brakeIdx]?.imageUrl || null;
 
-  const frameOverlay = frameColor?.imageUrl || null;
-  const gripOverlay = gripColor?.imageUrl || null;
-  const mudguardOverlay = mudguardColor?.imageUrl || null;
-  const brakeOverlay = brakeColor?.imageUrl || null;
-  const backrestOverlay = backrestColor?.imageUrl || null;
-  const basketOverlay = basketColor?.imageUrl || null;
+  // ---------------- Canvas helpers (cached images) ----------------
+  const loadImage = (src) =>
+    new Promise((resolve) => {
+      if (!src) return resolve(null);
 
-  // ---------------- Filters from hex (for live recolour) ----------------
-  const paintFilter = hexToCssFilter(paintHex);
-  const decalFilter = hexToCssFilter(decalHex);
-  const highlightFilter = hexToCssFilter(highlightHex);
+      const cache = imageCacheRef.current;
+      if (cache.has(src)) return resolve(cache.get(src));
 
-  const paintCmyk = hexToCmyk(paintHex);
-  const decalCmyk = hexToCmyk(decalHex);
-  const highlightCmyk = hexToCmyk(highlightHex);
-
-  // ---------------- Download / Share ----------------
-  const captureCanvas = async () => {
-    if (!previewRef.current) return null;
-    const canvas = await html2canvas(previewRef.current, {
-      useCORS: true,
-      backgroundColor: null,
-      scale: 2,
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        cache.set(src, img);
+        resolve(img);
+      };
+      img.onerror = (err) => {
+        console.error("Image load failed:", src, err);
+        resolve(null);
+      };
+      img.src = src;
     });
+
+  const canvasToBlob = (canvas) =>
+    new Promise((resolve) => {
+      canvas.toBlob((blob) => resolve(blob), "image/png");
+    });
+
+  const buildCanvasFromState = async () => {
+    if (!previewRef.current || !baseBikeImage) return null;
+
+    await waitForFontsOnce();
+
+    const [
+      baseImgEl,
+      frameImg,
+      mudguardImg,
+      gripImg,
+      brakeImg,
+      carBaseImg,
+      carPaintImg,
+      carDecalImg,
+      primaryImg,
+      secondaryImg,
+      logoImg,
+    ] = await Promise.all([
+      loadImage(baseBikeImage),
+      loadImage(frameOverlay),
+      loadImage(mudguardOverlay),
+      loadImage(gripOverlay),
+      loadImage(brakeOverlay),
+      loadImage(carBase),
+      loadImage(carPaintMask),
+      loadImage(carDecalMask),
+      loadImage(primaryMask),
+      loadImage(secondaryMask),
+      loadImage(logo),
+    ]);
+
+    if (!baseImgEl) return null;
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
+    const w = baseImgEl.naturalWidth || baseImgEl.width;
+    const h = baseImgEl.naturalHeight || baseImgEl.height;
+    canvas.width = w;
+    canvas.height = h;
+
+    // ✅ Correct stack order
+    ctx.drawImage(baseImgEl, 0, 0, w, h);
+
+    if (frameImg) ctx.drawImage(frameImg, 0, 0, w, h);
+    if (mudguardImg) ctx.drawImage(mudguardImg, 0, 0, w, h);
+    if (gripImg) ctx.drawImage(gripImg, 0, 0, w, h);
+    if (brakeImg) ctx.drawImage(brakeImg, 0, 0, w, h);
+
+    // Stickers base ALWAYS
+    if (carBaseImg) ctx.drawImage(carBaseImg, 0, 0, w, h);
+
+    // ✅ Tint ONLY if enabled, else draw original mask image
+    if (carPaintImg) {
+      if (paintEnabled && paintHex) drawTintedMask(ctx, carPaintImg, paintHex, w, h);
+      else ctx.drawImage(carPaintImg, 0, 0, w, h);
+    }
+
+    if (carDecalImg) {
+      if (decalEnabled && decalHex) drawTintedMask(ctx, carDecalImg, decalHex, w, h);
+      else ctx.drawImage(carDecalImg, 0, 0, w, h);
+    }
+
+    // ✅ BOTH primary + secondary always
+    if (primaryImg) {
+      if (primaryEnabled && primaryHex) drawTintedMask(ctx, primaryImg, primaryHex, w, h);
+      else ctx.drawImage(primaryImg, 0, 0, w, h);
+    }
+
+    if (secondaryImg) {
+      if (secondaryEnabled && secondaryHex) drawTintedMask(ctx, secondaryImg, secondaryHex, w, h);
+      else ctx.drawImage(secondaryImg, 0, 0, w, h);
+    }
+
+    if (logoImg) ctx.drawImage(logoImg, 0, 0, w, h);
+
+    // ---- Text from DOM ----
+    const previewRect = previewRef.current.getBoundingClientRect();
+
+    const drawTextFromDom = (elRef, text, angleDeg) => {
+      if (!elRef.current || !text) return;
+
+      const rect = elRef.current.getBoundingClientRect();
+      const centerX = rect.left - previewRect.left + rect.width / 2;
+      const centerY = rect.top - previewRect.top + rect.height / 2;
+
+      const scaleX = canvas.width / previewRect.width;
+      const x = centerX * scaleX;
+      const y = centerY * scaleX;
+
+      const computed = window.getComputedStyle(elRef.current);
+      const fontSizePx = parseFloat(computed.fontSize || "14");
+      const fontSizeCanvas = fontSizePx * scaleX;
+
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate((angleDeg * Math.PI) / 180);
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      ctx.font = `${fontSizeCanvas}px "Tigershark Bold Italic", sans-serif`;
+      ctx.lineWidth = fontSizeCanvas * 0.12;
+      ctx.strokeStyle = "rgba(0,0,0,1)";
+      ctx.fillStyle = "#ffffff";
+      ctx.strokeText(text, 0, 0);
+      ctx.fillText(text, 0, 0);
+      ctx.restore();
+    };
+
+    drawTextFromDom(nameRef, name, -22);
+    drawTextFromDom(taglineRef, tagline, 48.8);
+
     return canvas;
   };
 
   const handleDownload = async () => {
     try {
-      const canvas = await captureCanvas();
+      const canvas = await buildCanvasFromState();
       if (!canvas) return;
       const url = canvas.toDataURL("image/png");
       const a = document.createElement("a");
@@ -218,10 +368,11 @@ function FunCustomize() {
 
   const handleShare = async () => {
     try {
-      const canvas = await captureCanvas();
+      const canvas = await buildCanvasFromState();
       if (!canvas) return;
-      const url = canvas.toDataURL("image/png");
-      const blob = await (await fetch(url)).blob();
+      const blob = await canvasToBlob(canvas);
+      if (!blob) return;
+
       const file = new File([blob], "custom-cycle-fun.png", {
         type: "image/png",
       });
@@ -230,7 +381,6 @@ function FunCustomize() {
         await navigator.share({
           files: [file],
           title: "My Fun Custom Cycle",
-          text: "Check out my fun bike!",
         });
       } else {
         alert("Share not supported on this device");
@@ -243,37 +393,31 @@ function FunCustomize() {
 
   // ---------------- Save back to backend ----------------
   const handleSave = async () => {
-    if (!customizationId && !custom._id) {
-      alert("Missing customization id");
-      return;
-    }
     const id = customizationId || custom._id;
+    if (!id) return alert("Missing customization id");
 
     const payload = {
       userName: name,
       tagline,
-      themeVariant,
+
       frameColorIndex: frameIdx,
-      frameColor: frameColor
-        ? {
-            colorName: frameColor.colorName,
-            colorCode: frameColor.colorCode,
-            imageUrl: frameColor.imageUrl,
-            fileName: frameColor.fileName,
-          }
-        : undefined,
-      componentColors: {
-        frame: frameColor,
-        grip: gripColor,
-        mudguard: mudguardColor,
-        brakeLever: brakeColor,
-        backrest: backrestColor,
-        basket: basketColor,
-      },
+      gripColorIndex: gripIdx,
+      mudguardColorIndex: mudguardIdx,
+      brakeColorIndex: brakeIdx,
+
       stickerColors: {
-        carPaintHex: paintHex,
-        carDecalHex: decalHex,
-        highlightHex: highlightHex,
+        ...(paintEnabled && paintHex
+          ? { carPaintHex: paintHex, carPaintCmyk: paintCmyk }
+          : {}),
+        ...(decalEnabled && decalHex
+          ? { carDecalHex: decalHex, carDecalCmyk: decalCmyk }
+          : {}),
+        ...(primaryEnabled && primaryHex
+          ? { primaryHex, primaryCmyk: primaryCmyk }
+          : {}),
+        ...(secondaryEnabled && secondaryHex
+          ? { secondaryHex, secondaryCmyk: secondaryCmyk }
+          : {}),
       },
     };
 
@@ -324,7 +468,7 @@ function FunCustomize() {
         </div>
 
         <div ref={previewRef} style={cycleWrapper}>
-          {/* Base frame image from Customization (fun mode) */}
+          {/* Base */}
           {baseBikeImage && (
             <img
               src={baseBikeImage}
@@ -335,100 +479,61 @@ function FunCustomize() {
           )}
 
           {/* Components in order */}
-          {mudguardOverlay && (
-            <img
-              src={mudguardOverlay}
-              alt="Mudguard"
-              style={overlayImg}
-              crossOrigin="anonymous"
-            />
-          )}
           {frameOverlay && (
-            <img
-              src={frameOverlay}
-              alt="Frame"
-              style={overlayImg}
-              crossOrigin="anonymous"
-            />
+            <img src={frameOverlay} alt="Frame" style={overlayImg} crossOrigin="anonymous" />
           )}
-          {backrestOverlay && (
-            <img
-              src={backrestOverlay}
-              alt="Backrest"
-              style={overlayImg}
-              crossOrigin="anonymous"
-            />
-          )}
-          {basketOverlay && (
-            <img
-              src={basketOverlay}
-              alt="Basket"
-              style={overlayImg}
-              crossOrigin="anonymous"
-            />
+          {mudguardOverlay && (
+            <img src={mudguardOverlay} alt="Mudguard" style={overlayImg} crossOrigin="anonymous" />
           )}
           {gripOverlay && (
-            <img
-              src={gripOverlay}
-              alt="Grip"
-              style={overlayImg}
-              crossOrigin="anonymous"
-            />
+            <img src={gripOverlay} alt="Grip" style={overlayImg} crossOrigin="anonymous" />
           )}
           {brakeOverlay && (
-            <img
-              src={brakeOverlay}
-              alt="Brake lever"
-              style={overlayImg}
-              crossOrigin="anonymous"
-            />
+            <img src={brakeOverlay} alt="Brake lever" style={overlayImg} crossOrigin="anonymous" />
           )}
 
-          {/* Stickers in correct stack order */}
-          {carBase && (
-            <img
-              src={carBase}
-              alt="Car base"
-              style={overlayImg}
-              crossOrigin="anonymous"
-            />
-          )}
-          {carPaint && (
-            <img
-              src={carPaint}
-              alt="Car paint"
-              style={{ ...overlayImg, filter: paintFilter }}
-              crossOrigin="anonymous"
-            />
-          )}
-          {carDecal && (
-            <img
-              src={carDecal}
-              alt="Car decal"
-              style={{ ...overlayImg, filter: decalFilter }}
-              crossOrigin="anonymous"
-            />
-          )}
-          {activeHighlightImage && (
-            <img
-              src={activeHighlightImage}
-              alt="Highlight"
-              style={{ ...overlayImg, filter: highlightFilter }}
-              crossOrigin="anonymous"
-            />
-          )}
-          {logo && (
-            <img
-              src={logo}
-              alt="Logo"
-              style={overlayImg}
-              crossOrigin="anonymous"
-            />
-          )}
+          {/* Stickers base */}
+          {carBase && <img src={carBase} alt="Car base" style={overlayImg} crossOrigin="anonymous" />}
+
+          {/* ✅ Tint ONLY after pick, else keep original */}
+          {carPaintMask &&
+            (paintEnabled && paintHex ? (
+              <TintMaskLayer src={carPaintMask} colorHex={paintHex} />
+            ) : (
+              <img src={carPaintMask} alt="Car paint raw" style={overlayImg} crossOrigin="anonymous" />
+            ))}
+
+          {carDecalMask &&
+            (decalEnabled && decalHex ? (
+              <TintMaskLayer src={carDecalMask} colorHex={decalHex} />
+            ) : (
+              <img src={carDecalMask} alt="Car decal raw" style={overlayImg} crossOrigin="anonymous" />
+            ))}
+
+          {/* ✅ BOTH always */}
+          {primaryMask &&
+            (primaryEnabled && primaryHex ? (
+              <TintMaskLayer src={primaryMask} colorHex={primaryHex} />
+            ) : (
+              <img src={primaryMask} alt="Primary raw" style={overlayImg} crossOrigin="anonymous" />
+            ))}
+
+          {secondaryMask &&
+            (secondaryEnabled && secondaryHex ? (
+              <TintMaskLayer src={secondaryMask} colorHex={secondaryHex} />
+            ) : (
+              <img src={secondaryMask} alt="Secondary raw" style={overlayImg} crossOrigin="anonymous" />
+            ))}
+
+          {logo && <img src={logo} alt="Logo" style={overlayImg} crossOrigin="anonymous" />}
 
           {/* Text overlays */}
-          <div style={nameStyle}>{name}</div>
-          <div style={taglineStyle}>{tagline}</div>
+          <div ref={nameRef} style={nameStyle}>
+            {name}
+          </div>
+          <div ref={taglineRef} style={taglineStyle}>
+            {tagline}
+          </div>
         </div>
       </div>
 
@@ -437,12 +542,8 @@ function FunCustomize() {
         <div style={rightCard}>
           {/* Header */}
           <div>
-            <h2 style={{ margin: 0, fontSize: 18 }}>{brand || "BSA"} – Fun</h2>
-            <div style={{ fontSize: 12, color: "#777" }}>
-              {themeName || "Car Decal"}
-              {cycleName ? ` • ${cycleName}` : ""}
-              {modelNo ? ` • ${modelNo}` : ""}
-            </div>
+            <h2 style={{ margin: 0, fontSize: 18 }}>{custom.brand || "BSA"} – Fun</h2>
+            <div style={{ fontSize: 12, color: "#777" }}>{custom.themeName || "Car Decal"}</div>
           </div>
 
           {/* Name & Tagline */}
@@ -475,33 +576,11 @@ function FunCustomize() {
             </div>
           </div>
 
-          {/* Sticker theme toggle */}
-          <div>
-            <span style={label}>Sticker theme</span>
-            <div style={{ display: "flex", gap: 8 }}>
-              <button
-                type="button"
-                style={pillButton(themeVariant === "primary")}
-                onClick={() => setThemeVariant("primary")}
-              >
-                Primary
-              </button>
-              <button
-                type="button"
-                style={pillButton(themeVariant === "secondary")}
-                onClick={() => setThemeVariant("secondary")}
-              >
-                Secondary
-              </button>
-            </div>
-          </div>
-
           {/* Component accordions */}
           {renderComponentSection({
             title: "Frame colour",
             isOpen: openPanel === "frame",
-            onToggle: () =>
-              setOpenPanel(openPanel === "frame" ? null : "frame"),
+            onToggle: () => setOpenPanel(openPanel === "frame" ? null : "frame"),
             colors: framePart.colors || [],
             activeIndex: frameIdx,
             onSelect: setFrameIdx,
@@ -510,8 +589,7 @@ function FunCustomize() {
           {renderComponentSection({
             title: "Grip colour",
             isOpen: openPanel === "grip",
-            onToggle: () =>
-              setOpenPanel(openPanel === "grip" ? null : "grip"),
+            onToggle: () => setOpenPanel(openPanel === "grip" ? null : "grip"),
             colors: gripPart.colors || [],
             activeIndex: gripIdx,
             onSelect: setGripIdx,
@@ -520,8 +598,7 @@ function FunCustomize() {
           {renderComponentSection({
             title: "Mudguard colour",
             isOpen: openPanel === "mudguard",
-            onToggle: () =>
-              setOpenPanel(openPanel === "mudguard" ? null : "mudguard"),
+            onToggle: () => setOpenPanel(openPanel === "mudguard" ? null : "mudguard"),
             colors: mudguardPart.colors || [],
             activeIndex: mudguardIdx,
             onSelect: setMudguardIdx,
@@ -530,74 +607,72 @@ function FunCustomize() {
           {renderComponentSection({
             title: "Brake lever colour",
             isOpen: openPanel === "brake",
-            onToggle: () =>
-              setOpenPanel(openPanel === "brake" ? null : "brake"),
+            onToggle: () => setOpenPanel(openPanel === "brake" ? null : "brake"),
             colors: brakePart.colors || [],
             activeIndex: brakeIdx,
             onSelect: setBrakeIdx,
           })}
 
-          {renderComponentSection({
-            title: "Backrest colour",
-            isOpen: openPanel === "backrest",
-            onToggle: () =>
-              setOpenPanel(openPanel === "backrest" ? null : "backrest"),
-            colors: backrestPart.colors || [],
-            activeIndex: backrestIdx,
-            onSelect: setBackrestIdx,
-          })}
-
-          {renderComponentSection({
-            title: "Basket colour",
-            isOpen: openPanel === "basket",
-            onToggle: () =>
-              setOpenPanel(openPanel === "basket" ? null : "basket"),
-            colors: basketPart.colors || [],
-            activeIndex: basketIdx,
-            onSelect: setBasketIdx,
-          })}
-
-          {/* Sticker colour pickers */}
+          {/* Sticker pickers (RGB UI -> save CMYK too) */}
           <div>
-            <div
-              style={{
-                fontSize: 12,
-                fontWeight: 600,
-                marginBottom: 6,
-              }}
-            >
-              Sticker colours (live preview)
+            <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>
+              Sticker colours (RGB picker • saved as CMYK too)
             </div>
 
-            <StickerColorPicker
-              label="Car paint (Sticker 03)"
-              hex={paintHex}
-              onChange={setPaintHex}
+            <StickerRgbPicker
+              label="Car paint"
+              hex={paintHex || "#000000"}
+              onChange={(h) => {
+                setPaintHex(h);
+                setPaintEnabled(true);
+              }}
               cmyk={paintCmyk}
+              enabled={paintEnabled}
+              onEnable={() => setPaintEnabled(true)}
             />
-            <StickerColorPicker
-              label="Car decal (Sticker 04)"
-              hex={decalHex}
-              onChange={setDecalHex}
+
+            <StickerRgbPicker
+              label="Car decal"
+              hex={decalHex || "#000000"}
+              onChange={(h) => {
+                setDecalHex(h);
+                setDecalEnabled(true);
+              }}
               cmyk={decalCmyk}
+              enabled={decalEnabled}
+              onEnable={() => setDecalEnabled(true)}
             />
-            <StickerColorPicker
-              label="Primary / Secondary highlight"
-              hex={highlightHex}
-              onChange={setHighlightHex}
-              cmyk={highlightCmyk}
+
+            <StickerRgbPicker
+              label="Primary colour"
+              hex={primaryHex || "#000000"}
+              onChange={(h) => {
+                setPrimaryHex(h);
+                setPrimaryEnabled(true);
+              }}
+              cmyk={primaryCmyk}
+              enabled={primaryEnabled}
+              onEnable={() => setPrimaryEnabled(true)}
+            />
+
+            <StickerRgbPicker
+              label="Secondary colour"
+              hex={secondaryHex || "#000000"}
+              onChange={(h) => {
+                setSecondaryHex(h);
+                setSecondaryEnabled(true);
+              }}
+              cmyk={secondaryCmyk}
+              enabled={secondaryEnabled}
+              onEnable={() => setSecondaryEnabled(true)}
             />
           </div>
 
           {/* Actions */}
-          <button
-            type="button"
-            style={primaryButton}
-            onClick={handleSave}
-            disabled={saving}
-          >
+          <button type="button" style={primaryButton} onClick={handleSave} disabled={saving}>
             {saving ? "SAVING..." : "SAVE FUN CUSTOMIZATION"}
           </button>
+
           <button
             type="button"
             style={{ ...primaryButton, background: "#555", marginTop: 6 }}
@@ -611,63 +686,82 @@ function FunCustomize() {
   );
 }
 
-/* ---------------- Small sub-components ---------------- */
+/* ---------------- Sub-components ---------------- */
 
-function StickerColorPicker({ label, hex, onChange, cmyk }) {
+function TintMaskLayer({ src, colorHex }) {
+  return (
+    <div
+      style={{
+        ...overlayImg,
+        backgroundColor: colorHex,
+        WebkitMaskImage: `url(${src})`,
+        maskImage: `url(${src})`,
+        WebkitMaskRepeat: "no-repeat",
+        maskRepeat: "no-repeat",
+        WebkitMaskSize: "contain",
+        maskSize: "contain",
+        WebkitMaskPosition: "center",
+        maskPosition: "center",
+      }}
+    />
+  );
+}
+
+function StickerRgbPicker({ label, hex, onChange, cmyk, enabled, onEnable }) {
   return (
     <div style={stickerPickerCard}>
       <div style={{ display: "flex", justifyContent: "space-between" }}>
         <span style={{ fontSize: 12, fontWeight: 500 }}>{label}</span>
-        <div
-          style={{
-            width: 20,
-            height: 20,
-            borderRadius: 4,
-            border: "1px solid #ddd",
-            background: hex,
-          }}
-        />
+        <div style={{ width: 20, height: 20, borderRadius: 4, border: "1px solid #ddd", background: enabled ? hex : "#fff" }} />
       </div>
+
       <div style={{ marginTop: 6, display: "flex", alignItems: "center" }}>
         <input
           type="color"
           value={hex}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => {
+            onEnable();
+            onChange(e.target.value);
+          }}
           style={{
-            width: 40,
-            height: 32,
+            width: 44,
+            height: 34,
             border: "none",
             background: "transparent",
             padding: 0,
-            marginRight: 8,
+            marginRight: 10,
             cursor: "pointer",
           }}
         />
         <div style={{ fontSize: 11, color: "#555" }}>
           <div>HEX: {hex.toUpperCase()}</div>
-          <div>
-            CMYK: C {cmyk.c}% • M {cmyk.m}% • Y {cmyk.y}% • K {cmyk.k}%
-          </div>
+          {cmyk ? (
+            <div>
+              CMYK: C {cmyk.c}% • M {cmyk.m}% • Y {cmyk.y}% • K {cmyk.k}%
+            </div>
+          ) : (
+            <div>CMYK: (pick colour)</div>
+          )}
         </div>
       </div>
+
+      {!enabled && (
+        <div style={{ marginTop: 6, fontSize: 11, color: "#b00" }}>
+          * Sticker keeps original until you pick a color
+        </div>
+      )}
     </div>
   );
 }
 
-function renderComponentSection({
-  title,
-  isOpen,
-  onToggle,
-  colors,
-  activeIndex,
-  onSelect,
-}) {
+function renderComponentSection({ title, isOpen, onToggle, colors, activeIndex, onSelect }) {
   return (
     <div style={accordionCard}>
       <div style={accordionHeader} onClick={onToggle}>
         <span>{title}</span>
         <span>{isOpen ? "−" : "+"}</span>
       </div>
+
       {isOpen && (
         <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 8 }}>
           {colors.map((c, idx) => (
@@ -684,19 +778,11 @@ function renderComponentSection({
   );
 }
 
-/* ---------------- Colour helpers ---------------- */
+/* ---------------- Canvas tint helpers ---------------- */
 
-// Simple hex → HSL based filter approximation
-function hexToCssFilter(hex) {
-  const { h, s, l } = hexToHsl(hex);
-  return `saturate(150%) hue-rotate(${h}deg) brightness(${100 + (l - 50) / 2}%)`;
-}
-
-function hexToHsl(hex) {
-  let r = 0,
-    g = 0,
-    b = 0;
-  const clean = hex.replace("#", "");
+function hexToRgb(hex) {
+  const clean = (hex || "#ffffff").replace("#", "");
+  let r = 255, g = 255, b = 255;
   if (clean.length === 3) {
     r = parseInt(clean[0] + clean[0], 16);
     g = parseInt(clean[1] + clean[1], 16);
@@ -706,46 +792,42 @@ function hexToHsl(hex) {
     g = parseInt(clean.substring(2, 4), 16);
     b = parseInt(clean.substring(4, 6), 16);
   }
-
-  r /= 255;
-  g /= 255;
-  b /= 255;
-
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  let h = 0,
-    s = 0,
-    l = (max + min) / 2;
-
-  if (max !== min) {
-    const d = max - min;
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-
-    switch (max) {
-      case r:
-        h = (g - b) / d + (g < b ? 6 : 0);
-        break;
-      case g:
-        h = (b - r) / d + 2;
-        break;
-      case b:
-        h = (r - g) / d + 4;
-        break;
-      default:
-        break;
-    }
-    h *= 60;
-  }
-
-  return { h: Math.round(h), s: s * 100, l: l * 100 };
+  return { r, g, b };
 }
 
-// Hex → CMYK (0–100)
+function drawTintedMask(ctx, img, hex, width, height) {
+  const { r: tr, g: tg, b: tb } = hexToRgb(hex);
+
+  const off = document.createElement("canvas");
+  off.width = width;
+  off.height = height;
+  const octx = off.getContext("2d");
+
+  octx.clearRect(0, 0, width, height);
+  octx.drawImage(img, 0, 0, width, height);
+
+  const imageData = octx.getImageData(0, 0, width, height);
+  const data = imageData.data;
+
+  for (let i = 0; i < data.length; i += 4) {
+    const a = data[i + 3];
+    if (a === 0) continue;
+    const lum = (data[i] + data[i + 1] + data[i + 2]) / (3 * 255);
+    data[i] = tr * lum;
+    data[i + 1] = tg * lum;
+    data[i + 2] = tb * lum;
+  }
+
+  octx.putImageData(imageData, 0, 0);
+  ctx.drawImage(off, 0, 0, width, height);
+}
+
+/* ---------------- Colour conversion ---------------- */
+
 function hexToCmyk(hex) {
-  let r = 0,
-    g = 0,
-    b = 0;
-  const clean = hex.replace("#", "");
+  if (!hex) return null;
+  let r = 0, g = 0, b = 0;
+  const clean = (hex || "#ffffff").replace("#", "");
   if (clean.length === 3) {
     r = parseInt(clean[0] + clean[0], 16);
     g = parseInt(clean[1] + clean[1], 16);
@@ -756,14 +838,10 @@ function hexToCmyk(hex) {
     b = parseInt(clean.substring(4, 6), 16);
   }
 
-  const rP = r / 255;
-  const gP = g / 255;
-  const bP = b / 255;
-
+  const rP = r / 255, gP = g / 255, bP = b / 255;
   const k = 1 - Math.max(rP, gP, bP);
-  if (k === 1) {
-    return { c: 0, m: 0, y: 0, k: 100 };
-  }
+  if (k >= 1) return { c: 0, m: 0, y: 0, k: 100 };
+
   const c = (1 - rP - k) / (1 - k);
   const m = (1 - gP - k) / (1 - k);
   const y = (1 - bP - k) / (1 - k);
@@ -776,7 +854,7 @@ function hexToCmyk(hex) {
   };
 }
 
-/* ---------------- Styles (same as Sporty) ---------------- */
+/* ---------------- Styles (UNCHANGED from your UI) ---------------- */
 
 const pageWrapper = {
   padding: "24px 32px",
@@ -829,7 +907,6 @@ const overlayImg = {
   height: "100%",
   objectFit: "contain",
   pointerEvents: "none",
-  transition: "filter 0.2s ease",
 };
 
 const baseText = {
@@ -869,23 +946,6 @@ const input = {
   boxSizing: "border-box",
   fontSize: "13px",
 };
-
-const label = {
-  fontSize: "13px",
-  color: "#777",
-  marginBottom: "4px",
-};
-
-const pillButton = (active) => ({
-  padding: "6px 14px",
-  borderRadius: "999px",
-  border: active ? "1px solid #4CAF50" : "1px solid #ccc",
-  background: active ? "#8BC34A" : "#ffffff",
-  color: active ? "#fff" : "#333",
-  cursor: "pointer",
-  fontSize: "13px",
-  fontWeight: 500,
-});
 
 const primaryButton = {
   width: "100%",
