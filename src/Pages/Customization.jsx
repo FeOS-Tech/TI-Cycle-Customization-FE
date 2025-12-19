@@ -29,6 +29,7 @@ function Customization() {
   const preloadImage = (src) => {
     if (!src) return;
     const img = new Image();
+    img.crossOrigin = "anonymous";  
     img.src = src;
   };
 
