@@ -186,7 +186,7 @@ export default function Kids() {
       image: "https://images.unsplash.com/photo-1520986606214-8b456906c813",
     },
     {
-      label: "CAR",
+      label: "MOTO - CARS",
       slug: "car-decal", // 👈 matches themeSlug in MongoDB
       image: "https://images.unsplash.com/photo-1503376780353-7e6692767b70",
     },
