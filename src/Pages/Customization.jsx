@@ -504,6 +504,8 @@ function Customization () {
         internalTheme: selectedInternalTheme,
         cycleName,
         modelNo,
+        
+        image_url: null,
 
         userName: name,
         tagline,

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { CUSTOM_API, THEME_API_BASE } from '../config/api'
+import { CUSTOM_API,THEME_API_BASE,BACKEND_URL } from "../config/api";
+import Swal from "sweetalert2";
 import Wheel from '@uiw/react-color-wheel'
 // import ShareIcon from '@mui/icons-material/Share';
 // import SimCardDownloadIcon from '@mui/icons-material/SimCardDownload';
@@ -118,6 +119,10 @@ function SportyCustomize () {
     [secondaryHex]
   )
 
+  //to check img is edited
+  const [isSaved, setIsSaved] = useState(false); // initially NOT saved
+  const [isEditing, setIsEditing] = useState(true); // initially editing
+
   // ---------------- Helper: get part by code ----------------
   const getPartByCode = code => {
     return (
@@ -198,6 +203,11 @@ function SportyCustomize () {
 
     fetchTheme()
   }, [slug])
+
+  useEffect(() => {  
+    setIsEditing(true);
+    setIsSaved(false);
+  }, [frameIdx, gripIdx, mudguardIdx, brakeIdx, paintHex, decalHex, primaryHex, secondaryHex]);
 
   // ---------------- Early guards ----------------
   if (!custom && loading) {
@@ -396,55 +406,260 @@ function SportyCustomize () {
     return canvas
   }
 
-  const handleDownload = async () => {
-    try {
-      const canvas = await buildCanvasFromState()
-      if (!canvas) return
-      const url = canvas.toDataURL('image/png')
-      const a = document.createElement('a')
-      a.href = url
-      a.download = 'custom-cycle-sporty.png'
-      a.click()
-    } catch (err) {
-      console.error(err)
-      alert('Download failed')
+  async function generateAndUploadImage({
+    customizationId,
+    custom,
+    buildCanvasFromState,
+  }) {
+    const id = customizationId || custom?._id;
+    if (!id) throw new Error("Customization ID missing");
+
+    // Build canvas
+    const canvas = await buildCanvasFromState();
+    if (!canvas) throw new Error("Canvas build failed");
+
+    // Canvas → Blob
+    const blob = await new Promise((resolve, reject) => {
+      canvas.toBlob(
+        (b) => (b ? resolve(b) : reject("Blob creation failed")),
+        "image/png"
+      );
+    });
+
+    // Get presigned URL
+    const res = await fetch(
+      `${BACKEND_URL}/api/s3/${id}?fileType=image/png`
+    );
+    if (!res.ok) throw new Error("Failed to get presigned URL");
+
+    const { uploadUrl, fileUrl } = await res.json();
+    if (!uploadUrl || !fileUrl) {
+      throw new Error("Invalid presigned URL response");
     }
+
+    // Upload to S3
+    const uploadRes = await fetch(uploadUrl, {
+      method: "PUT",
+      body: blob,
+      headers: {
+        "Content-Type": "image/png",
+      },
+    });
+
+    if (!uploadRes.ok) throw new Error("S3 upload failed");
+
+    return fileUrl; // ONLY responsibility of this function
   }
+
+  async function updateCustomizationImage(id, imageUrl) {
+    if (!id || !imageUrl) {
+      throw new Error("id or imageUrl missing");
+    }
+
+    const res = await fetch(
+      `${CUSTOM_API}/${id}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          image_url: imageUrl,
+        }),
+      }
+    );
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`DB update failed: ${err}`);
+    }
+
+    return res.json();
+  }
+
+  const handleDownload = async () => {
+    const id = customizationId || custom._id;
+
+    
+    try {
+      let imageUrl = custom?.image_url;
+      if (isEditing && !isSaved) {
+        // 🔒 Lock screen with loader
+        Swal.fire({
+          title: "Preparing your image",
+          text: "Please wait...",
+          allowOutsideClick: false,
+          allowEscapeKey: false,
+          didOpen: () => Swal.showLoading(),
+        });
+
+        // 1️⃣ Generate + upload
+        imageUrl = await generateAndUploadImage({
+          id,
+          custom,
+          buildCanvasFromState,
+        });
+        
+        // 2️⃣ Update backend
+        await updateCustomizationImage(id, imageUrl);
+
+        setCustom((prev) => ({
+          ...prev,
+          image_url: imageUrl,
+        }));
+
+        setIsSaved(true);
+        setIsEditing(false);
+
+        // ❗ Close loader
+        Swal.close();
+      }
+
+      // 3️⃣ Show download modal
+      const result = await Swal.fire({
+        icon: "success",
+        title: "Image Ready",
+        text: "Your customization image is ready to download.",
+        confirmButtonText: "Download",
+        showCancelButton: true,
+        cancelButtonText: "Close",
+        allowOutsideClick: false,
+      });
+
+      if (result.isConfirmed) {
+        window.open(imageUrl, "_blank", "noopener,noreferrer");
+      }
+
+      return imageUrl;
+    } catch (err) {
+      console.error(err);
+
+      // ❗ Ensure loader is closed on error
+      Swal.close();
+
+      Swal.fire({
+        icon: "error",
+        title: "Failed",
+        text: "Something went wrong while preparing the image.",
+      });
+    }
+  };
+
+  const showCopyLinkAlert = async (imageUrl) => {
+    const result = await Swal.fire({
+      icon: "info",
+      title: "Share Link",
+      text: "Click the button below to copy the shareable link.",
+      confirmButtonText: "Copy Link",
+      showCancelButton: true,
+      cancelButtonText: "Close",
+      preConfirm: async () => {
+        await navigator.clipboard.writeText(imageUrl);
+      },
+    });
+
+    if (result.isConfirmed) {
+      Swal.fire({
+        icon: "success",
+        title: "Copied",
+        text: "Image link copied to clipboard",
+        timer: 1500,
+        showConfirmButton: false,
+      });
+    }
+  };
 
   const handleShare = async () => {
+    const id = customizationId || custom._id;
+
     try {
-      const canvas = await buildCanvasFromState()
-      if (!canvas) return
-      const blob = await canvasToBlob(canvas)
-      if (!blob) return
+      let imageUrl = custom?.image_url;
+      if (isEditing && !isSaved) {
+        // 🔒 Show fullscreen loader
+        Swal.fire({
+          title: "Preparing your image",
+          text: "Please wait...",
+          allowOutsideClick: false,
+          allowEscapeKey: false,
+          didOpen: () => Swal.showLoading(),
+        });
 
-      const file = new File([blob], 'custom-cycle-sporty.png', {
-        type: 'image/png'
-      })
+        // 1️⃣ Generate + upload image
+        const imageUrl = await generateAndUploadImage({
+          id,
+          custom,
+          buildCanvasFromState,
+        });
 
-      if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: 'My Sporty Custom Cycle'
-        })
-      } else {
-        alert('Share not supported on this device')
+        // 2️⃣ Update backend
+        await updateCustomizationImage(id, imageUrl);
+
+        setCustom((prev) => ({
+          ...prev,
+          image_url: imageUrl,
+        }));
+
+        setIsSaved(true);
+        setIsEditing(false);
+
+        // ❗ Close loader BEFORE any user interaction
+        Swal.close();
       }
+
+      // 3️⃣ Try native share
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: "My Custom Cycle",
+            text: "Check out my customized bike!",
+            url: imageUrl,
+          });
+          return; // ✅ success, stop here
+        } catch (err) {
+          if (err.name === "AbortError") return; // user cancelled
+          console.error("Share error:", err);
+        }
+      }
+
+      // 4️⃣ Fallback → copy link alert
+      await showCopyLinkAlert(imageUrl);
+
+      console.log("Customization image saved:", imageUrl);
     } catch (err) {
-      console.error(err)
-      alert('Share failed')
+      console.error(err);
+
+      // ❗ Ensure loader is closed on error
+      Swal.close();
+
+      Swal.fire({
+        icon: "error",
+        title: "Failed",
+        text: "Saving or sharing failed. Please try again.",
+      });
     }
-  }
+  };
 
   // ---------------- Save back to backend ----------------
   const handleSave = async () => {
     const id = customizationId || custom._id
     if (!id) return alert('Missing customization id')
 
+    let imageUrl = custom?.image_url;
+    if (isEditing && !isSaved) {
+      const imageUrl = await generateAndUploadImage({
+        id,
+        custom,
+        buildCanvasFromState,
+      });
+
+      setIsSaved(true);
+      setIsEditing(false);
+    }
+
     const payload = {
       userName: name,
       tagline,
-
+      image_url:imageUrl,
       // frameColorIndex: frameIdx,
       // gripColorIndex: gripIdx,
       // mudguardColorIndex: mudguardIdx,
