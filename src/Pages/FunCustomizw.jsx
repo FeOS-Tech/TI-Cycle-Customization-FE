@@ -22,6 +22,7 @@ function FunCustomize () {
   const nameRef = useRef(null)
   const taglineRef = useRef(null)
   const imageCacheRef = useRef(new Map()) // cache for images
+  const [baseImageLoaded, setBaseImageLoaded] = useState(false)
 
   // We expect these from Customization page
   const fromState = location.state || {}
@@ -548,6 +549,7 @@ function FunCustomize () {
               alt='Fun base'
               style={baseImg}
               crossOrigin='anonymous'
+              onLoad={() => setBaseImageLoaded(true)}
             />
           )}
 
@@ -671,12 +673,37 @@ function FunCustomize () {
           )}
 
           {/* Text overlays */}
-          <div ref={nameRef} style={nameStyle}>
+          {/* <div ref={nameRef} style={nameStyle}>
             {name}
           </div>
           <div ref={taglineRef} style={taglineStyle}>
             {tagline}
-          </div>
+          </div> */}
+          {baseImageLoaded && (
+            <>
+              <div
+                ref={nameRef}
+                style={{
+                  ...nameStyle,
+                  opacity: 1,
+                  transition: 'opacity 0.3s ease'
+                }}
+              >
+                {name}
+              </div>
+
+              <div
+                ref={taglineRef}
+                style={{
+                  ...taglineStyle,
+                  opacity: 1,
+                  transition: 'opacity 0.3s ease'
+                }}
+              >
+                {tagline}
+              </div>
+            </>
+          )}
         </div>
       </div>
 
