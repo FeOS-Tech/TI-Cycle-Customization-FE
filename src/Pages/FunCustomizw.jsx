@@ -48,6 +48,16 @@ function FunCustomize () {
       ? initialCustomization.frameColorIndex
       : null
   )
+  const [basketIdx, setBasketIdx] = useState(
+    Number.isInteger(initialCustomization?.basketColorIndex)
+      ? initialCustomization.basketColorIndex
+      : null
+  )
+  const [backrestIdx, setBackrestIdx] = useState(
+    Number.isInteger(initialCustomization?.backrestIndex)
+      ? initialCustomization.backrestIndex
+      : null
+  )
   const [gripIdx, setGripIdx] = useState(
     Number.isInteger(initialCustomization?.gripColorIndex)
       ? initialCustomization.gripColorIndex
@@ -141,6 +151,12 @@ function FunCustomize () {
         setFrameIdx(
           Number.isInteger(data.frameColorIndex) ? data.frameColorIndex : null
         )
+        setBasketIdx(
+          Number.isInteger(data.basketColorIndex) ? data.basketColorIndex : null
+        )
+        setBackrestIdx(
+          Number.isInteger(data.backrestColorIndex) ? data.backrestColorIndex : null
+        )
         setGripIdx(
           Number.isInteger(data.gripColorIndex) ? data.gripColorIndex : null
         )
@@ -226,6 +242,8 @@ function FunCustomize () {
 
   // ---------------- Parts from theme-config (frame / grip / mudguard / brake) ----------------
   const framePart = getPartByCode('F01')
+  const basketPart = getPartByCode('C04')
+  const backrestPart = getPartByCode('C03')
   const gripPart = getPartByCode('C05')
   const mudguardPart = getPartByCode('C02')
   const brakePart = getPartByCode('C06')
@@ -238,6 +256,12 @@ function FunCustomize () {
   const frameOverlay =
     frameIdx !== null ? framePart.colors?.[frameIdx]?.imageUrl : null
 
+  const basketOverlay =
+    basketIdx !== null ? basketPart.colors?.[basketIdx]?.imageUrl : null
+  
+  const backrestOverlay =
+    backrestIdx !== null ? backrestPart.colors?.[backrestIdx]?.imageUrl : null
+    
   const gripOverlay =
     gripIdx !== null ? gripPart.colors?.[gripIdx]?.imageUrl : null
 
@@ -293,6 +317,8 @@ function FunCustomize () {
     ] = await Promise.all([
       loadImage(baseBikeImage),
       loadImage(frameOverlay),
+      loadImage(basketOverlay),
+      loadImage(backrestOverlay),
       loadImage(mudguardOverlay),
       loadImage(gripOverlay),
       loadImage(brakeOverlay),
@@ -446,6 +472,8 @@ function FunCustomize () {
       // mudguardColorIndex: mudguardIdx,
       // brakeColorIndex: brakeIdx,
       ...(frameIdx !== null && { frameColorIndex: frameIdx }),
+      ...(basketIdx !== null && { basketColorIndex: basketIdx }),
+      ...(backrestIdx !== null && { backrestColorIndex: backrestIdx }),
       ...(gripIdx !== null && { gripColorIndex: gripIdx }),
       ...(mudguardIdx !== null && { mudguardColorIndex: mudguardIdx }),
       ...(brakeIdx !== null && { brakeColorIndex: brakeIdx }),
@@ -527,6 +555,22 @@ function FunCustomize () {
           {frameOverlay && (
             <img
               src={frameOverlay}
+              alt='Frame'
+              style={overlayImg}
+              crossOrigin='anonymous'
+            />
+          )}
+          {basketOverlay && (
+            <img
+              src={basketOverlay}
+              alt='Frame'
+              style={overlayImg}
+              crossOrigin='anonymous'
+            />
+          )}
+          {backrestOverlay && (
+            <img
+              src={backrestOverlay}
               alt='Frame'
               style={overlayImg}
               crossOrigin='anonymous'
@@ -686,6 +730,26 @@ function FunCustomize () {
             colors: framePart.colors || [],
             activeIndex: frameIdx,
             onSelect: setFrameIdx
+          })}
+
+          {renderComponentSection({
+            title: 'Basket colour',
+            isOpen: openPanel === 'basket',
+            onToggle: () =>
+              setOpenPanel(openPanel === 'basket' ? null : 'basket'),
+            colors: basketPart.colors || [],
+            activeIndex: basketIdx,
+            onSelect: setBasketIdx
+          })}
+
+          {renderComponentSection({
+            title: 'Backrest colour',
+            isOpen: openPanel === 'backrest',
+            onToggle: () =>
+              setOpenPanel(openPanel === 'backrest' ? null : 'backrest'),
+            colors: backrestPart.colors || [],
+            activeIndex: backrestIdx,
+            onSelect: setBackrestIdx
           })}
 
           {renderComponentSection({
