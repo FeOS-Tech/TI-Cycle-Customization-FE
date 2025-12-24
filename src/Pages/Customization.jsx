@@ -10,6 +10,8 @@ function Customization () {
   const baseImgRef = useRef(null)
   const nameRef = useRef(null)
   const taglineRef = useRef(null)
+  const lastImageRef = useRef(null)
+
   const [selectedInternalTheme, setSelectedInternalTheme] = useState(null)
 
   const [theme, setTheme] = useState(null)
@@ -28,12 +30,12 @@ function Customization () {
   const [isImageLoading, setIsImageLoading] = useState(false)
 
   // ---------- Helpers ----------
-  const preloadImage = (src) => {
-    if (!src) return;
-    const img = new Image();
-        img.crossOrigin = "anonymous";  
-    img.src = src;
-  };
+  const preloadImage = src => {
+    if (!src) return
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.src = src
+  }
 
   const normalizeUrl = url => (typeof url === 'string' ? url.trim() : '')
 
@@ -212,18 +214,13 @@ function Customization () {
   // }
   const loaderOverlay = {
     position: 'absolute',
-    top: '50%',
-    left: '50%',
-    width: '100%',
-    height: '100%',
-    transform: 'translate(-50%, -50%)',
+    inset: 0, // ✅ cover parent fully
     background: 'rgba(255,255,255,0.7)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 30,
-    pointerEvents: 'none',
-    transition: 'opacity 0.2s ease'
+    pointerEvents: 'none'
   }
 
   const loaderGif = {
@@ -342,24 +339,58 @@ function Customization () {
   //   setIsImageLoading(true)
   // }, [baseBikeImage])
 
+  // useEffect(() => {
+  //   if (!baseBikeImage) {
+  //     setIsImageLoading(false)
+  //     return
+  //   }
+
+  //   const img = new Image()
+  //   img.src = baseBikeImage
+
+  //   // ✅ image already cached → don't show loader
+  //   if (img.complete) {
+  //     setIsImageLoading(false)
+  //   } else {
+  //     setIsImageLoading(true)
+  //   }
+  // }, [baseBikeImage])
+
   useEffect(() => {
-    if (!baseBikeImage) {
+    if (!baseBikeImage) return
+
+    if (lastImageRef.current === baseBikeImage) {
+      // same image → no loader
+      setIsImageLoading(false)
+      return
+    }
+    lastImageRef.current = baseBikeImage
+
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.src = baseBikeImage
+
+    // ✅ If already cached → NEVER show loader
+    if (img.complete && img.naturalWidth > 0) {
       setIsImageLoading(false)
       return
     }
 
-    const img = new Image()
-    img.src = baseBikeImage
+    setIsImageLoading(true)
 
-    // ✅ image already cached → don't show loader
-    if (img.complete) {
+    img.onload = () => {
       setIsImageLoading(false)
-    } else {
-      setIsImageLoading(true)
+    }
+
+    img.onerror = () => {
+      setIsImageLoading(false)
     }
   }, [baseBikeImage])
 
-  const handleImgLoaded = () => setIsImageLoading(false)
+  // const handleImgLoaded = () => setIsImageLoading(false)
+  const handleImgLoaded = () => {
+    setIsImageLoading(prev => (prev ? false : prev))
+  }
 
   const handleImgError = e => {
     console.error('Base bike image failed:', baseBikeImage, e)
@@ -504,7 +535,7 @@ function Customization () {
         internalTheme: selectedInternalTheme,
         cycleName,
         modelNo,
-        
+
         image_url: null,
 
         userName: name,
@@ -583,7 +614,17 @@ function Customization () {
           </button>
         </div>
 
-        <div ref={previewRef} style={cycleWrapper}>
+        {/* <div ref={previewRef} style={cycleWrapper}> */}
+        <div
+          ref={previewRef}
+          style={{
+            ...cycleWrapper,
+            minHeight: '500px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
           {baseBikeImage && (
             <img
               key={baseBikeImage} // ✅ helps if browser caches aggressively
