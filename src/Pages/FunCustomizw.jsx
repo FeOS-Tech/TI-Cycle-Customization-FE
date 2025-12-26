@@ -17,6 +17,7 @@ function waitForFontsOnce () {
 
 function FunCustomize () {
   const { slug } = useParams()
+  const { customId } = useParams()
   const location = useLocation()
   const navigate = useNavigate()
   const previewRef = useRef(null)
@@ -29,7 +30,7 @@ function FunCustomize () {
   const fromState = location.state || {}
   const initialCustomization = fromState.customization || null
   const customizationIdFromState =
-    fromState.customizationId || initialCustomization?._id || null
+    fromState.customizationId || initialCustomization?._id || customId || null
 
   const [custom, setCustom] = useState(initialCustomization)
   const [customizationId] = useState(customizationIdFromState)
@@ -175,8 +176,8 @@ function FunCustomize () {
         )
 
         // restore saved colors if present
-        const p = data.stickerColors?.carPaintHex || ''
-        const d = data.stickerColors?.carDecalHex || ''
+        const p = data.stickerColors?.paintHex || ''
+        const d = data.stickerColors?.decalHex || ''
         const pr = data.stickerColors?.primaryHex || ''
         const s = data.stickerColors?.secondaryHex || ''
 
@@ -502,9 +503,6 @@ function FunCustomize () {
   const handleDownload = async () => {
     const id = customizationId || custom._id;
 
-
-    try {
-      let imageUrl = custom?.image_url;
       if (isEditing && !isSaved) {
         // 🔒 Lock screen with loader
         Swal.fire({
@@ -514,7 +512,12 @@ function FunCustomize () {
           allowEscapeKey: false,
           didOpen: () => Swal.showLoading(),
         });
+      }
 
+    try {
+      let imageUrl = custom?.image_url;
+      if (isEditing && !isSaved) {
+  
         // 1️⃣ Generate + upload
         imageUrl = await generateAndUploadImage({
           id,
@@ -532,10 +535,8 @@ function FunCustomize () {
 
         setIsSaved(true);
         setIsEditing(false);
-
-        // ❗ Close loader
-        Swal.close();
       }
+      if (isEditing && !isSaved) Swal.close();
 
       // 3️⃣ Show download modal
       const result = await Swal.fire({
@@ -594,18 +595,20 @@ function FunCustomize () {
   const handleShare = async () => {
     const id = customizationId || custom._id;
 
+    if (isEditing && !isSaved) {
+      // 🔒 Show fullscreen loader
+      Swal.fire({
+        title: "Preparing your image",
+        text: "Please wait...",
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => Swal.showLoading(),
+      });
+    }
     try {
       let imageUrl = custom?.image_url;
       if (isEditing && !isSaved) {
-        // 🔒 Show fullscreen loader
-        Swal.fire({
-          title: "Preparing your image",
-          text: "Please wait...",
-          allowOutsideClick: false,
-          allowEscapeKey: false,
-          didOpen: () => Swal.showLoading(),
-        });
-
+      
         // 1️⃣ Generate + upload image
         const imageUrl = await generateAndUploadImage({
           id,
@@ -623,10 +626,8 @@ function FunCustomize () {
 
         setIsSaved(true);
         setIsEditing(false);
-
-        // ❗ Close loader BEFORE any user interaction
-        Swal.close();
       }
+      if (isEditing && !isSaved) Swal.close();
 
       // 3️⃣ Try native share
       if (navigator.share) {
@@ -668,20 +669,33 @@ function FunCustomize () {
 
     let imageUrl = custom?.image_url;
     if (isEditing && !isSaved) {
-      const imageUrl = await generateAndUploadImage({
-        id,
-        custom,
-        buildCanvasFromState,
-      });
+      (async () => {
+        try {
+          const imageUrl = await generateAndUploadImage({
+            id,
+            custom,
+            buildCanvasFromState,
+          });
 
-      setIsSaved(true);
-      setIsEditing(false);
+          await updateCustomizationImage(id, imageUrl);
+
+          setCustom(prev => ({
+            ...prev,
+            image_url: imageUrl,
+          }));
+
+          setIsSaved(true);
+          setIsEditing(false);
+        } catch (err) {
+          console.error("Background upload failed:", err);
+        }
+      })();
     }
 
     const payload = {
       userName: name,
       tagline,
-
+      // image_url:imageUrl,
       // frameColorIndex: frameIdx,
       // gripColorIndex: gripIdx,
       // mudguardColorIndex: mudguardIdx,
@@ -695,10 +709,10 @@ function FunCustomize () {
 
       stickerColors: {
         ...(paintEnabled && paintHex
-          ? { carPaintHex: paintHex, carPaintCmyk: paintCmyk }
+          ? { paintHex: paintHex, paintCmyk: paintCmyk }
           : {}),
         ...(decalEnabled && decalHex
-          ? { carDecalHex: decalHex, carDecalCmyk: decalCmyk }
+          ? { decalHex: decalHex, decalCmyk: decalCmyk }
           : {}),
         ...(primaryEnabled && primaryHex
           ? { primaryHex, primaryCmyk: primaryCmyk }
@@ -721,10 +735,22 @@ function FunCustomize () {
 
       const updated = await res.json()
       setCustom(updated)
-      alert('Fun customization saved')
+      // alert('Fun customization saved')
+      await Swal.fire({
+        icon: "success",
+        title: "Saved",
+        text: "Sporty customization saved successfully.",
+        confirmButtonText: "OK",
+      });
     } catch (err) {
       console.error(err)
-      alert('Error saving fun customization')
+      // alert('Error saving fun customization')
+      await Swal.fire({
+        icon: "error",
+        title: "Failed",
+        text: "Error saving sporty customization.",
+        confirmButtonText: "Close",
+      });
     } finally {
       setSaving(false)
     }
