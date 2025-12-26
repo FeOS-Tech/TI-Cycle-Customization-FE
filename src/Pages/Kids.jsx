@@ -178,7 +178,7 @@ export default function Kids() {
     {
       label: "SPACE",
       slug: "space",
-      image: "https://images.unsplash.com/photo-1581092795360-1c2c8c8f4b98",
+      image: "https://img.freepik.com/free-vector/gradient-galaxy-background_52683-140959.jpg?t=st=1766763801~exp=1766767401~hmac=26f59301a73818ac0713a5e5ab840b7d3b12aa6a705b6c6cba403e4698a69677&w=1060",
     },
     {
       label: "KIDS",
@@ -191,9 +191,9 @@ export default function Kids() {
       image: "https://images.unsplash.com/photo-1503376780353-7e6692767b70",
     },
     {
-      label: "FANTASY",
-      slug: "fantasy",
-      image: "https://images.unsplash.com/photo-1544473244-f66c1d1d1aa1",
+      label: "FOOTBALL",
+      slug: "foot-ball",
+      image: "https://cdn.vectorstock.com/i/750p/98/01/cartoon-boy-playing-football-vector-48849801.avif",
     },
   ];
 
