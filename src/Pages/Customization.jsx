@@ -54,9 +54,9 @@ function Customization () {
     flex: 2,
     position: 'relative',
     background: '#fff',
-    borderRadius: '12px',
-    boxShadow: '0 8px 20px rgba(0,0,0,0.18)',
-    padding: '16px'
+    borderRadius: '5px',
+    // boxShadow: '0 8px 20px rgba(0,0,0,0.18)',
+    // padding: '16px'
   }
 
   const rightPanel = {
@@ -66,9 +66,9 @@ function Customization () {
 
   const rightCard = {
     flex: 1,
-    background: '#fff',
-    borderRadius: '12px',
-    boxShadow: '0 6px 18px rgba(0,0,0,0.18)',
+    // background: '#fff',
+    // borderRadius: '12px',
+    // boxShadow: '0 6px 18px rgba(0,0,0,0.18)',
     padding: '16px 18px',
     display: 'flex',
     flexDirection: 'column',
@@ -111,7 +111,7 @@ function Customization () {
     fontSize: '8px'
   }
 
-  const label = { fontSize: '13px', color: '#777', marginBottom: '4px' }
+  const label = { fontSize: '14px', color: '#070707', marginBottom: '4px' }
 
   const input = {
     padding: '8px 10px',
@@ -146,8 +146,8 @@ function Customization () {
   })
 
   const colorDot = (hex, selected) => ({
-    width: '22px',
-    height: '22px',
+    width: '38px',
+    height: '38px',
     borderRadius: '50%',
     background: hex || '#ffffff',
     // border: selected ? "2px solid #000" : "1px solid #bbb",
@@ -169,15 +169,16 @@ function Customization () {
 
   const primaryButton = {
     width: '100%',
-    padding: '12px',
-    borderRadius: '8px',
+    paddingTop: '1rem',
+    paddingBottom: '1rem',
+    borderRadius: '1rem',
     border: 'none',
     background: '#000',
     color: '#fff',
     fontWeight: 600,
     cursor: 'pointer',
-    fontSize: '14px',
-    letterSpacing: '0.05em'
+    fontSize: '1rem',
+    letterSpacing: '0.05em',
   }
 
   const iconBar = {
