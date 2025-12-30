@@ -389,9 +389,15 @@ function FunCustomize () {
     if (brakeImg) ctx.drawImage(brakeImg, 0, 0, w, h)
 
     // Stickers base ALWAYS
-    if (carBaseImg) ctx.drawImage(carBaseImg, 0, 0, w, h)
+    // if (carBaseImg) ctx.drawImage(carBaseImg, 0, 0, w, h)
 
     // ✅ Tint ONLY if enabled, else draw original mask image
+    if (carBaseImg) {
+      if (baseEnabled && baseHex)
+        drawTintedMask(ctx, carBaseImg, baseHex, w, h)
+      else ctx.drawImage(carBaseImg, 0, 0, w, h)
+    }
+
     if (carPaintImg) {
       if (paintEnabled && paintHex)
         drawTintedMask(ctx, carPaintImg, paintHex, w, h)

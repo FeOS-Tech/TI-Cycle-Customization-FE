@@ -43,7 +43,7 @@ function Customization () {
   const pageWrapper = {
     padding: '24px 32px',
     color: '#333',
-    background: '#f4f4f4',
+    // background: '#f4f4f4',
     minHeight: '100vh',
     display: 'flex',
     gap: '24px',
@@ -57,6 +57,8 @@ function Customization () {
     borderRadius: '5px',
     // boxShadow: '0 8px 20px rgba(0,0,0,0.18)',
     // padding: '16px'
+    background:
+    "radial-gradient(circle,rgba(255, 255, 255, 0.94) 20%, rgba(201, 201, 201, 0.61) 100%)",
   }
 
   const rightPanel = {
@@ -69,7 +71,7 @@ function Customization () {
     // background: '#fff',
     // borderRadius: '12px',
     // boxShadow: '0 6px 18px rgba(0,0,0,0.18)',
-    padding: '16px 18px',
+    padding: '10px 18px',
     display: 'flex',
     flexDirection: 'column',
     gap: '14px'
@@ -146,8 +148,8 @@ function Customization () {
   })
 
   const colorDot = (hex, selected) => ({
-    width: '38px',
-    height: '38px',
+    width: '30px',
+    height: '30px',
     borderRadius: '50%',
     background: hex || '#ffffff',
     // border: selected ? "2px solid #000" : "1px solid #bbb",
@@ -179,6 +181,7 @@ function Customization () {
     cursor: 'pointer',
     fontSize: '1rem',
     letterSpacing: '0.05em',
+    marginTop: '8px',
   }
 
   const iconBar = {
@@ -693,7 +696,7 @@ function Customization () {
 
           <div>
             <span style={label}>Bike size</span>
-            <div style={{ display: 'flex', gap: '8px' }}>
+            <div style={{ display: 'flex', gap: '12px' ,marginTop:'8px' }}>
               {['16T', '20T'].map(sz => (
                 <button
                   key={sz}
@@ -708,7 +711,7 @@ function Customization () {
 
           <div>
             <span style={label}>Bike preference</span>
-            <div style={{ display: 'flex', gap: '8px' }}>
+            <div style={{ display: 'flex', gap: '12px'  ,marginTop:'8px' }}>
               <button
                 style={pillButton(mode === 'sporty')}
                 onClick={() => setMode('sporty')}
@@ -729,8 +732,8 @@ function Customization () {
             <div>
               <span
                 style={{
-                  fontSize: '13px',
-                  color: '#777',
+                  fontSize: '14px',
+                  color: 'rgb(7, 7, 7)',
                   marginBottom: '6px',
                   display: 'inline-block'
                 }}
@@ -738,7 +741,7 @@ function Customization () {
                 Theme
               </span>
 
-              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' , marginTop: '8px' }}>
                 {theme.internalThemes.map(t => {
                   const isActive = selectedInternalTheme?.id === t.id
 
@@ -783,7 +786,7 @@ function Customization () {
             >
               Frame colour
             </span>
-            <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' ,marginTop:'8px'  }}>
               {filteredFrameColors.map((c, idx) => (
                 <div
                   key={c.fileName || idx}
