@@ -82,6 +82,9 @@ function FunCustomize () {
 
   // ✅ RGB picker values (source of truth)
   // IMPORTANT: use "" when not chosen -> no auto-white
+  const [baseHex, setBaseHex] = useState(
+    initialCustomization?.stickerColors?.baseHex || ''
+  )
   const [paintHex, setPaintHex] = useState(
     initialCustomization?.stickerColors?.carPaintHex || ''
   )
@@ -96,6 +99,9 @@ function FunCustomize () {
   )
 
   // ✅ enabled flags: tint ONLY after user picks color
+  const [baseEnabled, setBaseEnabled] = useState(
+    !!initialCustomization?.stickerColors?.baseHex
+  )
   const [paintEnabled, setPaintEnabled] = useState(
     !!initialCustomization?.stickerColors?.carPaintHex
   )
@@ -110,6 +116,10 @@ function FunCustomize () {
   )
 
   // CMYK derived (for saving)
+  const baseCmyk = useMemo(
+    () => (baseHex ? hexToCmyk(baseHex) : null),
+    [baseHex]
+  )
   const paintCmyk = useMemo(
     () => (paintHex ? hexToCmyk(paintHex) : null),
     [paintHex]
@@ -176,16 +186,19 @@ function FunCustomize () {
         )
 
         // restore saved colors if present
+        const b = data.stickerColors?.baseHex || ''
         const p = data.stickerColors?.paintHex || ''
         const d = data.stickerColors?.decalHex || ''
         const pr = data.stickerColors?.primaryHex || ''
         const s = data.stickerColors?.secondaryHex || ''
 
+        setBaseHex(b)
         setPaintHex(p)
         setDecalHex(d)
         setPrimaryHex(pr)
         setSecondaryHex(s)
 
+        setBaseEnabled(!!b)
         setPaintEnabled(!!p)
         setDecalEnabled(!!d)
         setPrimaryEnabled(!!pr)
@@ -220,7 +233,7 @@ function FunCustomize () {
   useEffect(() => {  
     setIsEditing(true);
     setIsSaved(false);
-  }, [frameIdx, gripIdx, mudguardIdx, brakeIdx, paintHex, decalHex, primaryHex, secondaryHex ,backrestIdx ,basketIdx]);
+  }, [frameIdx, gripIdx, mudguardIdx, brakeIdx, paintHex, decalHex, primaryHex, secondaryHex ,backrestIdx ,basketIdx, baseHex]);
 
   // ---------------- Early guards ----------------
   if (!custom && loading) {
@@ -250,6 +263,22 @@ function FunCustomize () {
   const primaryMask = stickers.primaryColour || null
   const secondaryMask = stickers.secondaryColour || null
   const logo = stickers.logo || null
+
+   //apply colour in stickers 
+  const isBaseStickerColorAllowed =
+  stickers?.isBaseStickerColorAllowed ?? false;
+
+  const isPaintStickerColorAllowed =
+  stickers?.isPaintStickerColorAllowed ?? false;
+
+  const isDecalStickerColorAllowed =
+  stickers?.isDecalStickerColorAllowed ?? false;
+
+  const isPrimaryStickerColorAllowed =
+  stickers?.isPrimaryStickerColorAllowed ?? false;
+
+  const isSecondaryStickerColorAllowed =
+  stickers?.isSecondaryStickerColorAllowed ?? false;
 
   // ---------------- Parts from theme-config (frame / grip / mudguard / brake) ----------------
   const framePart = getPartByCode('F01')
@@ -708,6 +737,9 @@ function FunCustomize () {
       ...(brakeIdx !== null && { brakeColorIndex: brakeIdx }),
 
       stickerColors: {
+        ...(baseEnabled && baseHex
+          ? { baseHex: baseHex, baseCmyk: baseCmyk }
+          : {}),
         ...(paintEnabled && paintHex
           ? { paintHex: paintHex, paintCmyk: paintCmyk }
           : {}),
@@ -844,14 +876,17 @@ function FunCustomize () {
           )}
 
           {/* Stickers base */}
-          {carBase && (
-            <img
-              src={carBase}
-              alt='Car base'
-              style={overlayImg}
-              crossOrigin='anonymous'
-            />
-          )}
+          {carBase &&
+            (baseEnabled && baseHex ? (
+              <TintMaskLayer src={carBase} colorHex={baseHex} />
+            ) : (
+              <img
+                src={carBase}
+                alt='Car Base'
+                style={overlayImg}
+                crossOrigin='anonymous'
+              />
+          ))}
 
           {/* ✅ Tint ONLY after pick, else keep original */}
           {carPaintMask &&
@@ -1054,53 +1089,75 @@ function FunCustomize () {
               Sticker colours
             </div>
             <div style={{ display: 'flex', gap: '12px', overflowX: 'auto' }}>
-              <StickerRgbPicker
-                label='Car paint'
-                hex={paintHex}
-                onChange={h => {
-                  setPaintHex(h)
-                  setPaintEnabled(true)
-                }}
-                cmyk={paintCmyk}
-                enabled={paintEnabled}
-                onEnable={() => setPaintEnabled(true)}
-              />
+              {isBaseStickerColorAllowed && (
+                <StickerRgbPicker
+                  label="Car Base"
+                  hex={baseHex}
+                  onChange={h => {
+                    setBaseHex(h)
+                    setBaseEnabled(true)
+                  }}
+                  cmyk={baseCmyk}
+                  enabled={baseEnabled}
+                  onEnable={() => setBaseEnabled(true)}
+                />
+              )}
 
-              <StickerRgbPicker
-                label='Car decal'
-                hex={decalHex}
-                onChange={h => {
-                  setDecalHex(h)
-                  setDecalEnabled(true)
-                }}
-                cmyk={decalCmyk}
-                enabled={decalEnabled}
-                onEnable={() => setDecalEnabled(true)}
-              />
+              {isPaintStickerColorAllowed && (
+                <StickerRgbPicker
+                  label='Car paint'
+                  hex={paintHex}
+                  onChange={h => {
+                    setPaintHex(h)
+                    setPaintEnabled(true)
+                  }}
+                  cmyk={paintCmyk}
+                  enabled={paintEnabled}
+                  onEnable={() => setPaintEnabled(true)}
+                />
+              )}
 
-              <StickerRgbPicker
-                label='Primary colour'
-                hex={primaryHex}
-                onChange={h => {
-                  setPrimaryHex(h)
-                  setPrimaryEnabled(true)
-                }}
-                cmyk={primaryCmyk}
-                enabled={primaryEnabled}
-                onEnable={() => setPrimaryEnabled(true)}
-              />
+              {isDecalStickerColorAllowed && (
+                <StickerRgbPicker
+                  label='Car decal'
+                  hex={decalHex}
+                  onChange={h => {
+                    setDecalHex(h)
+                    setDecalEnabled(true)
+                  }}
+                  cmyk={decalCmyk}
+                  enabled={decalEnabled}
+                  onEnable={() => setDecalEnabled(true)}
+                />
+              )}
 
-              <StickerRgbPicker
-                label='Secondary colour'
-                hex={secondaryHex}
-                onChange={h => {
-                  setSecondaryHex(h)
-                  setSecondaryEnabled(true)
-                }}
-                cmyk={secondaryCmyk}
-                enabled={secondaryEnabled}
-                onEnable={() => setSecondaryEnabled(true)}
-              />
+              {isPrimaryStickerColorAllowed && (
+                <StickerRgbPicker
+                  label='Primary colour'
+                  hex={primaryHex}
+                  onChange={h => {
+                    setPrimaryHex(h)
+                    setPrimaryEnabled(true)
+                  }}
+                  cmyk={primaryCmyk}
+                  enabled={primaryEnabled}
+                  onEnable={() => setPrimaryEnabled(true)}
+                />
+              )}
+
+              {isSecondaryStickerColorAllowed && (
+                <StickerRgbPicker
+                  label='Secondary colour'
+                  hex={secondaryHex}
+                  onChange={h => {
+                    setSecondaryHex(h)
+                    setSecondaryEnabled(true)
+                  }}
+                  cmyk={secondaryCmyk}
+                  enabled={secondaryEnabled}
+                  onEnable={() => setSecondaryEnabled(true)}
+                />
+              )}
             </div>
           </div>
 
