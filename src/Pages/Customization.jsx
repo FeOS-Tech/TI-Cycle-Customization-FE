@@ -58,7 +58,7 @@ function Customization () {
     // boxShadow: '0 8px 20px rgba(0,0,0,0.18)',
     // padding: '16px'
     background:
-    "radial-gradient(circle,rgba(255, 255, 255, 0.94) 20%, rgba(201, 201, 201, 0.61) 100%)",
+    "radial-gradient(circle,rgba(255, 255, 255, 0.94) 35%, rgba(201, 201, 201, 0.61) 100%)",
   }
 
   const rightPanel = {
