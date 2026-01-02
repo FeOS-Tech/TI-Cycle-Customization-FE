@@ -526,6 +526,7 @@ function Customization () {
   // ---------- Save + navigate ----------
   const handleCustomize = async () => {
     try {
+      const user = JSON.parse(sessionStorage.getItem("userData") || "{}");
       setSaving(true)
 
       // ✅ SAME PAYLOAD AS YOUR FREEZE CODE (but now stickers/baseBikeImage are current selection)
@@ -565,7 +566,8 @@ function Customization () {
         stickersRaw: {
           ...stickers,
           selectedBaseImage: baseBikeImage
-        }
+        },
+        user
       }
 
       const res = await fetch(CUSTOM_API, {

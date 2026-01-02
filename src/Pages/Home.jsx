@@ -1,7 +1,25 @@
 import { useNavigate } from "react-router-dom";
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 
 export default function Home() {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+
+    const data = {
+      sid: params.get("cid"),
+      name: params.get("name"),
+      phone: params.get("phone"),
+      email: params.get("email"),
+    };
+
+    // quick sanity check
+    console.log(data)
+    if (!data.cid && !data.phone) return;
+
+    sessionStorage.setItem("userData", JSON.stringify(data));
+  }, []);
 
   return (
     <div className="w-full bg-white text-gray-800">
