@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { CUSTOM_API,THEME_API_BASE,BACKEND_URL } from "../config/api";
 import Swal from "sweetalert2";
 import Wheel from '@uiw/react-color-wheel'
+import LoaderOverlay from "../Components/LoaderOverlay";
 // import ShareIcon from '@mui/icons-material/Share';
 // import SimCardDownloadIcon from '@mui/icons-material/SimCardDownload';
 // import "@uiw/react-color-wheel/dist/index.css";
@@ -135,6 +136,7 @@ function SportyCustomize () {
   const [isEditing, setIsEditing] = useState(true); // initially editing
   const [firstRenderAllowed, setFirstRenderAllowed] = useState(false);
   const [secondRenderAllowed, setSecondRenderAllowed] = useState(false);
+  const [thirdRenderAllowed, setThirdRenderAllowed] = useState(false);
 
 
   // ---------------- Helper: get part by code ----------------
@@ -200,11 +202,15 @@ function SportyCustomize () {
         setLoading(false)
         setTimeout(() => {
           setFirstRenderAllowed(true);
-        }, 4000);
+        }, 3000);
 
         setTimeout(() => {
           setSecondRenderAllowed(true);
-        }, 6000);
+        }, 5000);
+
+        setTimeout(() => {
+          setThirdRenderAllowed(true);
+        }, 8000);
       }
     }
 
@@ -786,6 +792,7 @@ function SportyCustomize () {
   // ---------------- UI ----------------
   return (
     <div style={pageWrapper}>
+      {!thirdRenderAllowed && <LoaderOverlay />}
       <style>
         {`
           @font-face {
@@ -855,7 +862,7 @@ function SportyCustomize () {
           )}
 
           {/* Stickers base */}
-           {carBase && firstRenderAllowed &&
+           {carBase && secondRenderAllowed &&
             (baseEnabled && baseHex ? (
               <TintMaskLayer src={carBase} colorHex={baseHex} />
             ) : (
@@ -868,7 +875,7 @@ function SportyCustomize () {
             ))}
 
           {/* ✅ Tint ONLY after pick, else keep original */}
-          {carPaintMask && firstRenderAllowed &&
+          {carPaintMask && secondRenderAllowed &&
             (paintEnabled && paintHex ? (
               <TintMaskLayer src={carPaintMask} colorHex={paintHex} />
             ) : (
@@ -880,7 +887,7 @@ function SportyCustomize () {
               />
             ))}
 
-          {carDecalMask && firstRenderAllowed &&
+          {carDecalMask && secondRenderAllowed &&
             (decalEnabled && decalHex ? (
               <TintMaskLayer src={carDecalMask} colorHex={decalHex} />
             ) : (
@@ -893,7 +900,7 @@ function SportyCustomize () {
             ))}
 
           {/* ✅ BOTH always */}
-          {primaryMask && firstRenderAllowed &&
+          {primaryMask && secondRenderAllowed &&
             (primaryEnabled && primaryHex ? (
               <TintMaskLayer src={primaryMask} colorHex={primaryHex} />
             ) : (
@@ -905,7 +912,7 @@ function SportyCustomize () {
               />
             ))}
 
-          {secondaryMask && firstRenderAllowed &&
+          {secondaryMask && secondRenderAllowed &&
             (secondaryEnabled && secondaryHex ? (
               <TintMaskLayer src={secondaryMask} colorHex={secondaryHex} />
             ) : (
@@ -933,7 +940,7 @@ function SportyCustomize () {
           <div ref={taglineRef} style={taglineStyle}>
             {tagline}
           </div> */}
-          {baseImageLoaded && firstRenderAllowed &&(
+          {baseImageLoaded && secondRenderAllowed &&(
             <>
               <div
                 ref={nameRef}
@@ -1025,7 +1032,7 @@ function SportyCustomize () {
                 paddingBottom: '6px'
               }}
             >
-              {isBaseStickerColorAllowed && secondRenderAllowed && (
+              {isBaseStickerColorAllowed && thirdRenderAllowed && (
                 <StickerRgbPicker
                   label="Car Base"
                   hex={baseHex}
@@ -1039,7 +1046,7 @@ function SportyCustomize () {
                 />
               )}
 
-              {isPaintStickerColorAllowed && secondRenderAllowed &&(
+              {isPaintStickerColorAllowed && thirdRenderAllowed &&(
                 <StickerRgbPicker
                   label='Car paint'
                   hex={paintHex}
@@ -1053,7 +1060,7 @@ function SportyCustomize () {
                 />
               )}
 
-              {isDecalStickerColorAllowed && secondRenderAllowed &&(
+              {isDecalStickerColorAllowed && thirdRenderAllowed &&(
                 <StickerRgbPicker
                   label='Car decal'
                   hex={decalHex}
@@ -1067,7 +1074,7 @@ function SportyCustomize () {
                 />
               )}
 
-              {isPrimaryStickerColorAllowed && secondRenderAllowed && (
+              {isPrimaryStickerColorAllowed && thirdRenderAllowed && (
                 <StickerRgbPicker
                   label='Primary colour'
                   hex={primaryHex}
@@ -1081,7 +1088,7 @@ function SportyCustomize () {
                 />
               )}
 
-              {isSecondaryStickerColorAllowed && secondRenderAllowed && (
+              {isSecondaryStickerColorAllowed && thirdRenderAllowed && (
                 <StickerRgbPicker
                   label='Secondary colour'
                   hex={secondaryHex}
