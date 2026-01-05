@@ -133,6 +133,9 @@ function SportyCustomize () {
   //to check img is edited
   const [isSaved, setIsSaved] = useState(false); // initially NOT saved
   const [isEditing, setIsEditing] = useState(true); // initially editing
+  const [firstRenderAllowed, setFirstRenderAllowed] = useState(false);
+  const [secondRenderAllowed, setSecondRenderAllowed] = useState(false);
+
 
   // ---------------- Helper: get part by code ----------------
   const getPartByCode = code => {
@@ -195,6 +198,13 @@ function SportyCustomize () {
         console.error('Customization load error:', err)
       } finally {
         setLoading(false)
+        setTimeout(() => {
+          setFirstRenderAllowed(true);
+        }, 4000);
+
+        setTimeout(() => {
+          setSecondRenderAllowed(true);
+        }, 6000);
       }
     }
 
@@ -811,7 +821,7 @@ function SportyCustomize () {
           )}
 
           {/* Components in order */}
-          {frameOverlay && (
+          {frameOverlay && firstRenderAllowed && (
             <img
               src={frameOverlay}
               alt='Frame'
@@ -819,7 +829,7 @@ function SportyCustomize () {
               crossOrigin='anonymous'
             />
           )}
-          {mudguardOverlay && (
+          {mudguardOverlay && firstRenderAllowed && (
             <img
               src={mudguardOverlay}
               alt='Mudguard'
@@ -827,7 +837,7 @@ function SportyCustomize () {
               crossOrigin='anonymous'
             />
           )}
-          {gripOverlay && (
+          {gripOverlay && firstRenderAllowed && (
             <img
               src={gripOverlay}
               alt='Grip'
@@ -835,7 +845,7 @@ function SportyCustomize () {
               crossOrigin='anonymous'
             />
           )}
-          {brakeOverlay && (
+          {brakeOverlay && firstRenderAllowed && (
             <img
               src={brakeOverlay}
               alt='Brake lever'
@@ -845,7 +855,7 @@ function SportyCustomize () {
           )}
 
           {/* Stickers base */}
-           {carBase &&
+           {carBase && firstRenderAllowed &&
             (baseEnabled && baseHex ? (
               <TintMaskLayer src={carBase} colorHex={baseHex} />
             ) : (
@@ -858,7 +868,7 @@ function SportyCustomize () {
             ))}
 
           {/* ✅ Tint ONLY after pick, else keep original */}
-          {carPaintMask &&
+          {carPaintMask && firstRenderAllowed &&
             (paintEnabled && paintHex ? (
               <TintMaskLayer src={carPaintMask} colorHex={paintHex} />
             ) : (
@@ -870,7 +880,7 @@ function SportyCustomize () {
               />
             ))}
 
-          {carDecalMask &&
+          {carDecalMask && firstRenderAllowed &&
             (decalEnabled && decalHex ? (
               <TintMaskLayer src={carDecalMask} colorHex={decalHex} />
             ) : (
@@ -883,7 +893,7 @@ function SportyCustomize () {
             ))}
 
           {/* ✅ BOTH always */}
-          {primaryMask &&
+          {primaryMask && firstRenderAllowed &&
             (primaryEnabled && primaryHex ? (
               <TintMaskLayer src={primaryMask} colorHex={primaryHex} />
             ) : (
@@ -895,7 +905,7 @@ function SportyCustomize () {
               />
             ))}
 
-          {secondaryMask &&
+          {secondaryMask && firstRenderAllowed &&
             (secondaryEnabled && secondaryHex ? (
               <TintMaskLayer src={secondaryMask} colorHex={secondaryHex} />
             ) : (
@@ -907,7 +917,7 @@ function SportyCustomize () {
               />
             ))}
 
-          {logo && (
+          {logo && firstRenderAllowed && (
             <img
               src={logo}
               alt='Logo'
@@ -923,7 +933,7 @@ function SportyCustomize () {
           <div ref={taglineRef} style={taglineStyle}>
             {tagline}
           </div> */}
-          {baseImageLoaded && (
+          {baseImageLoaded && firstRenderAllowed &&(
             <>
               <div
                 ref={nameRef}
@@ -1015,7 +1025,7 @@ function SportyCustomize () {
                 paddingBottom: '6px'
               }}
             >
-              {isBaseStickerColorAllowed && (
+              {isBaseStickerColorAllowed && secondRenderAllowed && (
                 <StickerRgbPicker
                   label="Car Base"
                   hex={baseHex}
@@ -1029,7 +1039,7 @@ function SportyCustomize () {
                 />
               )}
 
-              {isPaintStickerColorAllowed && (
+              {isPaintStickerColorAllowed && secondRenderAllowed &&(
                 <StickerRgbPicker
                   label='Car paint'
                   hex={paintHex}
@@ -1043,7 +1053,7 @@ function SportyCustomize () {
                 />
               )}
 
-              {isDecalStickerColorAllowed && (
+              {isDecalStickerColorAllowed && secondRenderAllowed &&(
                 <StickerRgbPicker
                   label='Car decal'
                   hex={decalHex}
@@ -1057,7 +1067,7 @@ function SportyCustomize () {
                 />
               )}
 
-              {isPrimaryStickerColorAllowed && (
+              {isPrimaryStickerColorAllowed && secondRenderAllowed && (
                 <StickerRgbPicker
                   label='Primary colour'
                   hex={primaryHex}
@@ -1071,7 +1081,7 @@ function SportyCustomize () {
                 />
               )}
 
-              {isSecondaryStickerColorAllowed && (
+              {isSecondaryStickerColorAllowed && secondRenderAllowed && (
                 <StickerRgbPicker
                   label='Secondary colour'
                   hex={secondaryHex}
