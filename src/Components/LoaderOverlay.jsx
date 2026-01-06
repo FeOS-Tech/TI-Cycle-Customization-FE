@@ -1,3 +1,4 @@
+import "./LoaderOverlay.css";
 export default function LoaderOverlay() {
   return (
     <div
@@ -14,8 +15,8 @@ export default function LoaderOverlay() {
         fontWeight: "600",
       }}
     >
-      {/* <span className="loader"></span> */}
-      <span>Loading....</span>
+      <span className="loader"></span>
+      {/* <span>Loading....</span> */}
     </div>
   );
 }

@@ -53,7 +53,7 @@ function Customization () {
   const leftPanel = {
     flex: 2,
     position: 'relative',
-    background: '#fff',
+    // background: '#fff',
     borderRadius: '5px',
     // boxShadow: '0 8px 20px rgba(0,0,0,0.18)',
     // padding: '16px'

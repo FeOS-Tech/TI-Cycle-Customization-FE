@@ -12,12 +12,14 @@ import CycleList from './Pages/CycleList'
 import Customization from './Pages/Customization'
 import SportyCustomize from './Pages/SportyCustomize'
 import FunCustomize from './Pages/FunCustomizw'
+import { Toaster } from "react-hot-toast";
 
 function App() {
 
   return (
     <BrowserRouter>
       <Navbar/>
+      <Toaster/>
       <Routes>
         <Route path="/" element={<Home/>}/>
         <Route path='/kids' element={<Kids/>}/>

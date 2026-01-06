@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { CUSTOM_API,THEME_API_BASE,BACKEND_URL } from "../config/api";
-import Swal from "sweetalert2";
+import AppModal from "../Components/AppModal";
+import { toast } from "react-hot-toast";
 import Wheel from '@uiw/react-color-wheel'
 import LoaderOverlay from "../Components/LoaderOverlay";
 // import ShareIcon from '@mui/icons-material/Share';
@@ -136,7 +137,9 @@ function SportyCustomize () {
   const [isEditing, setIsEditing] = useState(true); // initially editing
   const [firstRenderAllowed, setFirstRenderAllowed] = useState(false);
   const [secondRenderAllowed, setSecondRenderAllowed] = useState(false);
-  const [thirdRenderAllowed, setThirdRenderAllowed] = useState(false);
+  const [isPreparingImage, setIsPreparingImage] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalConfig, setModalConfig] = useState({});
 
 
   // ---------------- Helper: get part by code ----------------
@@ -524,21 +527,12 @@ function SportyCustomize () {
 
   const handleDownload = async () => {
     const id = customizationId || custom._id;
-
-    if (isEditing && !isSaved) {
-      Swal.fire({
-        title: "Preparing your image",
-        text: "Please wait...",
-        allowOutsideClick: false,
-        allowEscapeKey: false,
-        didOpen: () => Swal.showLoading(),
-      });
-    }
     let imageUrl = custom?.image_url;
+    
     try {
       
       if (isEditing && !isSaved) {
-
+        setIsPreparingImage(true);
         // 1️⃣ Generate + upload
         imageUrl = await generateAndUploadImage({
           id,
@@ -556,83 +550,68 @@ function SportyCustomize () {
 
         setIsSaved(true);
         setIsEditing(false);
+        setIsPreparingImage(false);
       }
 
-      if (isEditing && !isSaved) Swal.close();
-
-      // 3️⃣ Show download modal
-      const result = await Swal.fire({
-        icon: "success",
+      setModalConfig({
         title: "Image Ready",
-        text: "Your customization image is ready to download.",
-        confirmButtonText: "Download",
-        showCancelButton: true,
-        cancelButtonText: "Close",
-        allowOutsideClick: false,
+        message: "Your customization image is ready to download.",
+        actions: [
+          {
+            label: "Download",
+            className: "bg-green-600 text-white",
+            onClick: () => {
+              window.open(imageUrl, "_blank", "noopener,noreferrer");
+              setModalOpen(false);
+            }
+          }
+        ]
       });
 
-      if (result.isConfirmed) {
-        window.open(imageUrl, "_blank", "noopener,noreferrer");
-      }
+      setModalOpen(true);
 
       return imageUrl;
     } catch (err) {
       console.error(err);
-
-      // ❗ Ensure loader is closed on error
-      Swal.close();
-
-      Swal.fire({
-        icon: "error",
-        title: "Failed",
-        text: "Something went wrong while preparing the image.",
-      });
+      toast.error("Something went wrong while preparing the image.");
     }
   };
 
   const showCopyLinkAlert = async (imageUrl) => {
-    const result = await Swal.fire({
-      icon: "info",
+    setModalConfig({
       title: "Share Link",
-      text: "Click the button below to copy the shareable link.",
-      confirmButtonText: "Copy Link",
-      showCancelButton: true,
-      cancelButtonText: "Close",
-      preConfirm: async () => {
-        await navigator.clipboard.writeText(imageUrl);
-      },
+      message: "Click the button below to copy the link.",
+      actions: [
+        {
+          label: "Copy Link",
+          className: "bg-blue-600 text-white",
+          onClick: async () => {
+            try {
+              await navigator.clipboard.writeText(imageUrl);
+              toast.success("Copied to clipboard");
+              setModalOpen(false);
+            } catch (e) {
+              toast.error("Failed to copy");
+            }
+          }
+        }
+      ]
     });
 
-    if (result.isConfirmed) {
-      Swal.fire({
-        icon: "success",
-        title: "Copied",
-        text: "Image link copied to clipboard",
-        timer: 1500,
-        showConfirmButton: false,
-      });
-    }
+    setModalOpen(true);
+
   };
 
   const handleShare = async () => {
     const id = customizationId || custom._id;
 
-    if (isEditing && !isSaved) {
-      // 🔒 Show fullscreen loader
-      Swal.fire({
-        title: "Preparing your image",
-        text: "Please wait...",
-        allowOutsideClick: false,
-        allowEscapeKey: false,
-        didOpen: () => Swal.showLoading(),
-      });
-    }
+    
 
     try {
       let imageUrl = custom?.image_url;
 
       if (isEditing && !isSaved) {
-       
+        setIsPreparingImage(true);
         // 1️⃣ Generate + upload image
         const imageUrl = await generateAndUploadImage({
           id,
@@ -650,8 +629,8 @@ function SportyCustomize () {
 
         setIsSaved(true);
         setIsEditing(false);
+        setIsPreparingImage(false);
       }
-      if (isEditing && !isSaved) Swal.close();
       // 3️⃣ Try native share
       if (navigator.share) {
         try {
@@ -673,15 +652,7 @@ function SportyCustomize () {
       console.log("Customization image saved:", imageUrl);
     } catch (err) {
       console.error(err);
-
-      // ❗ Ensure loader is closed on error
-      Swal.close();
-
-      Swal.fire({
-        icon: "error",
-        title: "Failed",
-        text: "Saving or sharing failed. Please try again.",
-      });
+      toast.error("Saving or sharing failed. Please try again.");
     }
   };
 
@@ -760,22 +731,10 @@ function SportyCustomize () {
 
       const updated = await res.json()
       setCustom(updated)
-      // alert('Sporty customization saved')
-      await Swal.fire({
-        icon: "success",
-        title: "Saved",
-        text: "Sporty customization saved successfully.",
-        confirmButtonText: "OK",
-      });
+      toast.success("Saved successfully");
     } catch (err) {
       console.error(err)
-      // alert('Error saving sporty customization')
-      await Swal.fire({
-        icon: "error",
-        title: "Failed",
-        text: "Error saving sporty customization.",
-        confirmButtonText: "Close",
-      });
+      toast.error("Error saving sporty customization.");
     } finally {
       setSaving(false)
     }
@@ -784,7 +743,9 @@ function SportyCustomize () {
   // ---------------- UI ----------------
   return (
     <div style={pageWrapper}>
-      {!firstRenderAllowed && <LoaderOverlay />}
+      {(!firstRenderAllowed || isPreparingImage) && (
+        <LoaderOverlay />
+      )}
       <style>
         {`
           @font-face {
@@ -1115,6 +1076,11 @@ function SportyCustomize () {
           </button>
         </div>
       </div>
+      <AppModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        {...modalConfig}
+      />
     </div>
   )
 }

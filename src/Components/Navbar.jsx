@@ -71,7 +71,7 @@ export default function Navbar() {
                     <li key={item._id}>
                     <button className="dropdown-item-custom"
                     onClick={() =>
-                        navigate(`/kids/${item.themeSlug}/customize/${item.mode}/${item._id}`)
+                      window.location.href = `/kids/${item.themeSlug}/customize/${item.mode}/${item._id}`
                     }>
                         {item.customization_number || `Customization #${item._id}`}
                     </button>
