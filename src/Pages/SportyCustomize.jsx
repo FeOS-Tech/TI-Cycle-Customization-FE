@@ -203,10 +203,6 @@ function SportyCustomize () {
         setTimeout(() => {
           setFirstRenderAllowed(true);
         }, 5000);
-
-        setTimeout(() => {
-          setSecondRenderAllowed(true);
-        }, 10000);
       }
     }
 
@@ -788,7 +784,7 @@ function SportyCustomize () {
   // ---------------- UI ----------------
   return (
     <div style={pageWrapper}>
-      {!secondRenderAllowed && <LoaderOverlay />}
+      {!firstRenderAllowed && <LoaderOverlay />}
       <style>
         {`
           @font-face {
@@ -1028,7 +1024,7 @@ function SportyCustomize () {
                 paddingBottom: '6px'
               }}
             >
-              {isBaseStickerColorAllowed && secondRenderAllowed && (
+              {isBaseStickerColorAllowed && firstRenderAllowed && (
                 <StickerRgbPicker
                   label="Car Base"
                   hex={baseHex}
@@ -1042,7 +1038,7 @@ function SportyCustomize () {
                 />
               )}
 
-              {isPaintStickerColorAllowed && secondRenderAllowed &&(
+              {isPaintStickerColorAllowed && firstRenderAllowed &&(
                 <StickerRgbPicker
                   label='Car paint'
                   hex={paintHex}
@@ -1056,7 +1052,7 @@ function SportyCustomize () {
                 />
               )}
 
-              {isDecalStickerColorAllowed && secondRenderAllowed &&(
+              {isDecalStickerColorAllowed && firstRenderAllowed &&(
                 <StickerRgbPicker
                   label='Car decal'
                   hex={decalHex}
@@ -1070,7 +1066,7 @@ function SportyCustomize () {
                 />
               )}
 
-              {isPrimaryStickerColorAllowed && secondRenderAllowed && (
+              {isPrimaryStickerColorAllowed && firstRenderAllowed && (
                 <StickerRgbPicker
                   label='Primary colour'
                   hex={primaryHex}
@@ -1084,7 +1080,7 @@ function SportyCustomize () {
                 />
               )}
 
-              {isSecondaryStickerColorAllowed && secondRenderAllowed && (
+              {isSecondaryStickerColorAllowed && firstRenderAllowed && (
                 <StickerRgbPicker
                   label='Secondary colour'
                   hex={secondaryHex}
