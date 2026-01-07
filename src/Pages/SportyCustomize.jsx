@@ -30,6 +30,8 @@ function SportyCustomize () {
   const taglineRef = useRef(null)
   const imageCacheRef = useRef(new Map()) // cache for images
   const [baseImageLoaded, setBaseImageLoaded] = useState(false)
+  const offscreenCanvas = document.createElement('canvas')
+  const offscreenCtx = offscreenCanvas.getContext('2d')
 
   // We expect these from Customization page
   const fromState = location.state || {}
@@ -365,10 +367,27 @@ function SportyCustomize () {
     const canvas = document.createElement('canvas')
     const ctx = canvas.getContext('2d')
 
-    const w = baseImgEl.naturalWidth || baseImgEl.width
-    const h = baseImgEl.naturalHeight || baseImgEl.height
-    canvas.width = w
-    canvas.height = h
+    // const w = baseImgEl.naturalWidth || baseImgEl.width
+    // const h = baseImgEl.naturalHeight || baseImgEl.height
+    // canvas.width = w
+    // canvas.height = h
+    const maxWidth = 1920
+    const maxHeight = 1080
+
+    let w = baseImgEl.naturalWidth || baseImgEl.width
+    let h = baseImgEl.naturalHeight || baseImgEl.height
+
+    const scale = Math.min(
+      maxWidth / w,
+      maxHeight / h,
+      1 // never upscale
+    )
+
+    canvas.width = Math.round(w * scale)
+    canvas.height = Math.round(h * scale)
+
+    ctx.scale(scale, scale)
+
 
     // ✅ Correct stack order
     ctx.drawImage(baseImgEl, 0, 0, w, h)
@@ -417,21 +436,57 @@ function SportyCustomize () {
 
     // ---- Text from DOM ----
     const previewRect = previewRef.current.getBoundingClientRect()
+    const domToCanvasScale = w / previewRect.width
+
+
+    // const drawTextFromDom = (elRef, text, angleDeg) => {
+    //   if (!elRef.current || !text) return
+
+    //   const rect = elRef.current.getBoundingClientRect()
+    //   const centerX = rect.left - previewRect.left + rect.width / 2
+    //   const centerY = rect.top - previewRect.top + rect.height / 2
+
+    //   const scaleX = canvas.width / previewRect.width
+    //   const x = centerX * scaleX
+    //   const y = centerY * scaleX
+
+    //   const computed = window.getComputedStyle(elRef.current)
+    //   const fontSizePx = parseFloat(computed.fontSize || '14')
+    //   const fontSizeCanvas = fontSizePx * scaleX
+
+    //   ctx.save()
+    //   ctx.translate(x, y)
+    //   ctx.rotate((angleDeg * Math.PI) / 180)
+    //   ctx.textAlign = 'center'
+    //   ctx.textBaseline = 'middle'
+
+    //   ctx.font = `${fontSizeCanvas}px "Tigershark Bold Italic", sans-serif`
+    //   ctx.lineWidth = fontSizeCanvas * 0.12
+    //   ctx.strokeStyle = 'rgba(0,0,0,1)'
+    //   ctx.fillStyle = '#ffffff'
+    //   ctx.strokeText(text, 0, 0)
+    //   ctx.fillText(text, 0, 0)
+    //   ctx.restore()
+    // }
 
     const drawTextFromDom = (elRef, text, angleDeg) => {
       if (!elRef.current || !text) return
 
       const rect = elRef.current.getBoundingClientRect()
-      const centerX = rect.left - previewRect.left + rect.width / 2
-      const centerY = rect.top - previewRect.top + rect.height / 2
 
-      const scaleX = canvas.width / previewRect.width
-      const x = centerX * scaleX
-      const y = centerY * scaleX
+      // Center relative to preview
+      const centerX =
+      rect.left - previewRect.left + rect.width / 2
+      const centerY =
+      rect.top - previewRect.top + rect.height / 2
+
+  // 🔥 MAP DOM → ORIGINAL CANVAS SPACE
+      const x = centerX * domToCanvasScale
+      const y = centerY * domToCanvasScale
 
       const computed = window.getComputedStyle(elRef.current)
       const fontSizePx = parseFloat(computed.fontSize || '14')
-      const fontSizeCanvas = fontSizePx * scaleX
+      const fontSizeCanvas = fontSizePx * domToCanvasScale
 
       ctx.save()
       ctx.translate(x, y)
@@ -443,10 +498,12 @@ function SportyCustomize () {
       ctx.lineWidth = fontSizeCanvas * 0.12
       ctx.strokeStyle = 'rgba(0,0,0,1)'
       ctx.fillStyle = '#ffffff'
+
       ctx.strokeText(text, 0, 0)
       ctx.fillText(text, 0, 0)
       ctx.restore()
     }
+
 
     drawTextFromDom(nameRef, name, -22)
     drawTextFromDom(taglineRef, tagline, 48.8)
@@ -1235,32 +1292,61 @@ function hexToRgb (hex) {
   return { r, g, b }
 }
 
-function drawTintedMask (ctx, img, hex, width, height) {
-  const { r: tr, g: tg, b: tb } = hexToRgb(hex)
+// function drawTintedMask (ctx, img, hex, width, height) {
+//   const { r: tr, g: tg, b: tb } = hexToRgb(hex)
 
-  const off = document.createElement('canvas')
-  off.width = width
-  off.height = height
-  const octx = off.getContext('2d')
+//   const off = document.createElement('canvas')
+  
+//   off.width = width
+//   off.height = height
+//   const octx = off.getContext('2d')
 
-  octx.clearRect(0, 0, width, height)
-  octx.drawImage(img, 0, 0, width, height)
+//   octx.clearRect(0, 0, width, height)
+//   octx.drawImage(img, 0, 0, width, height)
 
-  const imageData = octx.getImageData(0, 0, width, height)
-  const data = imageData.data
+//   const imageData = octx.getImageData(0, 0, width, height)
+//   const data = imageData.data
 
-  for (let i = 0; i < data.length; i += 4) {
-    const a = data[i + 3]
-    if (a === 0) continue
-    const lum = (data[i] + data[i + 1] + data[i + 2]) / (3 * 255)
-    data[i] = tr * lum
-    data[i + 1] = tg * lum
-    data[i + 2] = tb * lum
+//   for (let i = 0; i < data.length; i += 4) {
+//     const a = data[i + 3]
+//     if (a === 0) continue
+//     const lum = (data[i] + data[i + 1] + data[i + 2]) / (3 * 255)
+//     data[i] = tr * lum
+//     data[i + 1] = tg * lum
+//     data[i + 2] = tb * lum
+//   }
+
+//   octx.putImageData(imageData, 0, 0)
+//   ctx.drawImage(off, 0, 0, width, height)
+// }
+  function drawTintedMask(ctx, img, hex, width, height) {
+    if (!hex) {
+      ctx.drawImage(img, 0, 0, width, height)
+      return
+    }
+
+    offscreenCanvas.width = width
+    offscreenCanvas.height = height
+
+    offscreenCtx.clearRect(0, 0, width, height)
+    offscreenCtx.drawImage(img, 0, 0, width, height)
+
+    const imageData = offscreenCtx.getImageData(0, 0, width, height)
+    const data = imageData.data
+
+    const { r, g, b } = hexToRgb(hex)
+
+    for (let i = 0; i < data.length; i += 4) {
+      if (data[i + 3] === 0) continue
+      const lum = (data[i] + data[i + 1] + data[i + 2]) / (3 * 255)
+      data[i] = r * lum
+      data[i + 1] = g * lum
+      data[i + 2] = b * lum
+    }
+
+    offscreenCtx.putImageData(imageData, 0, 0)
+    ctx.drawImage(offscreenCanvas, 0, 0, width, height)
   }
-
-  octx.putImageData(imageData, 0, 0)
-  ctx.drawImage(off, 0, 0, width, height)
-}
 
 /* ---------------- Colour conversion ---------------- */
 
