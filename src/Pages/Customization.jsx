@@ -47,7 +47,8 @@ function Customization () {
     minHeight: '100vh',
     display: 'flex',
     gap: '24px',
-    boxSizing: 'border-box'
+    boxSizing: 'border-box',
+    // background: 'linear-gradient(90deg,rgba(251, 106, 67, 0.7) 0%, rgba(251, 106, 67, 0.3) 2%, rgba(255, 255, 255, 1) 4%, rgba(255, 255, 255, 1) 97%, rgba(152, 198, 248, 0.6) 100%)'
   }
 
   const leftPanel = {
@@ -58,7 +59,7 @@ function Customization () {
     // boxShadow: '0 8px 20px rgba(0,0,0,0.18)',
     // padding: '16px'
     background:
-    "radial-gradient(circle,rgba(255, 255, 255, 0.94) 35%, rgba(201, 201, 201, 0.61) 100%)",
+    "radial-gradient(circle,rgba(255, 255, 255, 0.94) 30%, rgba(201, 201, 201, 0.32) 100%)",
   }
 
   const rightPanel = {
@@ -645,18 +646,24 @@ function Customization () {
           )}
 
           {/* Text */}
-          <div ref={nameRef} style={nameStyle}>
-            {name}
-          </div>
-          <div ref={taglineRef} style={taglineStyle}>
-            {tagline}
-          </div>
+           {!isImageLoading && (
+              <>
+                <div ref={nameRef} style={nameStyle}>
+                  {name}
+                </div>
+
+                <div ref={taglineRef} style={taglineStyle}>
+                  {tagline}
+                </div>
+              </>
+            )}
 
           {/* Loader */}
           {isImageLoading && (
             // <div style={loaderOverlay}>
             <div style={{ ...loaderOverlay, opacity: isImageLoading ? 1 : 0 }}>
-              <img src='/cycle.gif' alt='Loading' style={loaderGif} />
+              <span className="loader"></span>
+                {/* <img src='/cycle.gif' alt='Loading' style={loaderGif} /> */}
             </div>
           )}
         </div>

@@ -45,9 +45,9 @@ function SportyCustomize () {
   const [saving, setSaving] = useState(false)
 
   // --------- User editable fields ----------
-  const [name, setName] = useState(initialCustomization?.userName || 'NAMENAME')
+  const [name, setName] = useState(initialCustomization?.userName || '')
   const [tagline, setTagline] = useState(
-    initialCustomization?.tagline || 'TAGLINE HERE'
+    initialCustomization?.tagline || ''
   )
 
   // Part selections (indices)
@@ -163,8 +163,8 @@ function SportyCustomize () {
         const data = await res.json()
         setCustom(data)
 
-        setName(data.userName || 'NAMENAME')
-        setTagline(data.tagline || 'TAGLINE HERE')
+        setName(data.userName || '')
+        setTagline(data.tagline || '')
 
         setFrameIdx(
           Number.isInteger(data.frameColorIndex) ? data.frameColorIndex : null
@@ -927,7 +927,7 @@ function SportyCustomize () {
           {/* Header */}
           <div>
             <h2 style={{ margin: 0, fontSize: 18 }}>
-              {custom.brand} – {name}
+              {custom.brand}{name ? ` – ${name}` : ""}
             </h2>
             <div style={{ fontSize: 12, color: '#777' }}>Sporty</div>
           </div>

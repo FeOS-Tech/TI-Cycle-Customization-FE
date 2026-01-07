@@ -10,8 +10,8 @@ body {
 }
 
 .dropdown-toggle-btn {
-  background: #6c757d;
-  color: #fff;
+  /* background: #6c757d; */
+  /* color: #fff; */
   border: 1px solid #6c757d;
   border-radius: 0.375rem;
   padding: 6px 14px;
@@ -24,6 +24,9 @@ body {
 }
 
 .dropdown-menu-custom {
+  max-height: 220px;
+  overflow: scroll;
+  overflow-x: hidden;
   position: absolute;
   right: 0;
   margin-top: 6px;

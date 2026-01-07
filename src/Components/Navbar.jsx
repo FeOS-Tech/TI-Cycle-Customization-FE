@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import logo from "../assets/tt-logo.svg";
+import logo from "../assets/logo.svg";
 import { CUSTOM_API, THEME_API_BASE } from '../config/api';
 import { useNavigate } from "react-router-dom";
 
@@ -8,7 +8,7 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const user = JSON.parse(sessionStorage.getItem("userData") || "{}");
   const openWebsite = () => {
-    window.location.href = "https://trackandtrail.in/";
+    window.location.href = "/";
   };
   const navigate = useNavigate();
 
@@ -47,7 +47,7 @@ export default function Navbar() {
     user?.sid && Array.isArray(customizations) && customizations.length > 0;
 
   return (
-    <div className="flex items-center p-4 shadow bg-black">
+    <div className="flex items-center p-4 shadow">
       <img
         src={logo}
         alt="Logo"

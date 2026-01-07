@@ -169,6 +169,8 @@
 // }
 // src/pages/Kids.jsx
 import { useNavigate } from "react-router-dom";
+import car from "../assets/theme/Car.png";
+import football from "../assets/theme/Football.png";
 
 export default function Kids() {
   const navigate = useNavigate();
@@ -176,24 +178,14 @@ export default function Kids() {
   // Themes configuration – label is UI, slug is for URL + backend
   const themes = [
     {
-      label: "SPACE",
-      slug: "space",
-      image: "https://img.freepik.com/free-vector/gradient-galaxy-background_52683-140959.jpg?t=st=1766763801~exp=1766767401~hmac=26f59301a73818ac0713a5e5ab840b7d3b12aa6a705b6c6cba403e4698a69677&w=1060",
-    },
-    {
-      label: "KIDS",
-      slug: "kids",
-      image: "https://images.unsplash.com/photo-1520986606214-8b456906c813",
-    },
-    {
       label: "MOTO - CARS",
       slug: "car-decal", // 👈 matches themeSlug in MongoDB
-      image: "https://images.unsplash.com/photo-1503376780353-7e6692767b70",
+      image: car,
     },
     {
       label: "FOOTBALL",
       slug: "foot-ball",
-      image: "https://cdn.vectorstock.com/i/750p/98/01/cartoon-boy-playing-football-vector-48849801.avif",
+      image: football,
     },
   ];
 
@@ -204,22 +196,19 @@ export default function Kids() {
 
   return (
     <div className="w-full bg-white text-gray-800">
-      {/* Spacer for fixed navbar if you have one */}
-      <div className="h-20" />
-
       {/* HERO SECTION */}
       <section
         className="w-full h-72 bg-cover bg-center flex items-center px-10 text-white"
         style={{
           backgroundImage:
-            "url('https://images.unsplash.com/photo-1508051123996-69f8caf4891e')",
+            "url('https://trackandtrail.in/cdn/shop/files/Kids_2_1500x300px.jpg?v=1739801626')",
         }}
       >
         <h1 className="text-5xl font-bold">Kids</h1>
       </section>
 
       {/* THEME CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-10 px-10 py-16">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-10 p-14">
         {themes.map((theme) => (
           <div
             key={theme.slug}
@@ -228,10 +217,10 @@ export default function Kids() {
           >
             <img
               src={theme.image}
-              className="w-full h-64 object-cover"
+              className="w-full h-40 object-cover"
               alt={theme.label}
             />
-            <h2 className="absolute bottom-4 left-4 text-white text-3xl font-bold drop-shadow">
+            <h2 className="absolute bottom-4 left-4 text-3xl font-bold drop-shadow">
               {theme.label}
             </h2>
           </div>
@@ -239,9 +228,9 @@ export default function Kids() {
       </div>
 
       {/* FOOTER */}
-      <div className="bg-yellow-400 text-center py-10 font-bold text-lg">
+      {/* <div className="bg-yellow-400 text-center py-10 font-bold text-lg">
         Footer coming soon
-      </div>
+      </div> */}
     </div>
   );
 }
