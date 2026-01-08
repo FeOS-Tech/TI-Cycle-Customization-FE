@@ -730,29 +730,6 @@ function FunCustomize () {
     if (!id) return alert('Missing customization id')
 
     let imageUrl = custom?.image_url;
-    if (isEditing && !isSaved) {
-      (async () => {
-        try {
-          const imageUrl = await generateAndUploadImage({
-            id,
-            custom,
-            buildCanvasFromState,
-          });
-
-          await updateCustomizationImage(id, imageUrl);
-
-          setCustom(prev => ({
-            ...prev,
-            image_url: imageUrl,
-          }));
-
-          setIsSaved(true);
-          setIsEditing(false);
-        } catch (err) {
-          console.error("Background upload failed:", err);
-        }
-      })();
-    }
 
     const payload = {
       userName: name,
@@ -808,6 +785,31 @@ function FunCustomize () {
       toast.error("Error saving sporty customization.");
     } finally {
       setSaving(false)
+    }
+
+    if (isEditing && !isSaved) {
+      // toast.success("Generating image...");
+      
+      setTimeout(async () => {
+        try {
+          const imageUrl = await generateAndUploadImage({
+            id,
+            custom,
+            buildCanvasFromState,
+          });
+          
+          await updateCustomizationImage(id, imageUrl);
+          
+          setCustom(prev => ({ ...prev, image_url: imageUrl }));
+          setIsSaved(true);
+          setIsEditing(false);
+          
+          // toast.success("Image generated successfully!");
+        } catch (err) {
+          console.error("Background image generation failed:", err);
+          toast.error("Image generation failed, but data was saved");
+        }
+      }, 100); // Small delay to let UI update
     }
   }
 
