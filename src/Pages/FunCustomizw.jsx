@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { CUSTOM_API, THEME_API_BASE,BACKEND_URL } from '../config/api'
-import Swal from "sweetalert2";
 import Wheel from '@uiw/react-color-wheel'
-import { FaSave, FaShareAlt } from 'react-icons/fa'
+import { FaSave, FaShareAlt } from 'react-icons/fa';
+import AppModal from "../Components/AppModal";
+import LoaderOverlay from "../Components/LoaderOverlay";
 
 // ---------- Font ready cache (only once) ----------
 let fontsReadyPromise = null
@@ -40,9 +41,9 @@ function FunCustomize () {
   const [saving, setSaving] = useState(false)
 
   // --------- User editable fields ----------
-  const [name, setName] = useState(initialCustomization?.userName || 'NAMENAME')
+  const [name, setName] = useState(initialCustomization?.userName || '')
   const [tagline, setTagline] = useState(
-    initialCustomization?.tagline || 'TAGLINE HERE'
+    initialCustomization?.tagline || ''
   )
 
   // Part selections (indices)
@@ -139,6 +140,10 @@ function FunCustomize () {
 
   const [isSaved, setIsSaved] = useState(false);
   const [isEditing, setIsEditing] = useState(true);
+  const [firstRenderAllowed, setFirstRenderAllowed] = useState(false);
+  const [isPreparingImage, setIsPreparingImage] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalConfig, setModalConfig] = useState({});
 
   // ---------------- Helper: get part by code ----------------
   const getPartByCode = code => {
@@ -161,8 +166,8 @@ function FunCustomize () {
         const data = await res.json()
         setCustom(data)
 
-        setName(data.userName || 'NAMENAME')
-        setTagline(data.tagline || 'TAGLINE HERE')
+        setName(data.userName || '')
+        setTagline(data.tagline || '')
 
         setFrameIdx(
           Number.isInteger(data.frameColorIndex) ? data.frameColorIndex : null
@@ -206,7 +211,10 @@ function FunCustomize () {
       } catch (err) {
         console.error('Customization load error:', err)
       } finally {
-        setLoading(false)
+        setLoading(false);
+        setTimeout(() => {
+          setFirstRenderAllowed(true);
+        }, 3000);
       }
     }
 
@@ -535,24 +543,14 @@ function FunCustomize () {
     return res.json();
   }
 
-  const handleDownload = async () => {
+   const handleDownload = async () => {
     const id = customizationId || custom._id;
-
-      if (isEditing && !isSaved) {
-        // 🔒 Lock screen with loader
-        Swal.fire({
-          title: "Preparing your image",
-          text: "Please wait...",
-          allowOutsideClick: false,
-          allowEscapeKey: false,
-          didOpen: () => Swal.showLoading(),
-        });
-      }
-
+    let imageUrl = custom?.image_url;
+    
     try {
-      let imageUrl = custom?.image_url;
+      
       if (isEditing && !isSaved) {
-  
+        setIsPreparingImage(true);
         // 1️⃣ Generate + upload
         imageUrl = await generateAndUploadImage({
           id,
@@ -570,80 +568,69 @@ function FunCustomize () {
 
         setIsSaved(true);
         setIsEditing(false);
+        setIsPreparingImage(false);
       }
-      if (isEditing && !isSaved) Swal.close();
 
-      // 3️⃣ Show download modal
-      const result = await Swal.fire({
-        icon: "success",
+      setModalConfig({
         title: "Image Ready",
-        text: "Your customization image is ready to download.",
-        confirmButtonText: "Download",
-        showCancelButton: true,
-        cancelButtonText: "Close",
-        allowOutsideClick: false,
+        message: "Your customization image is ready to download.",
+        actions: [
+          {
+            label: "Download",
+            className: "bg-green-600 text-white",
+            onClick: () => {
+              window.open(imageUrl, "_blank", "noopener,noreferrer");
+              setModalOpen(false);
+            }
+          }
+        ]
       });
 
-      if (result.isConfirmed) {
-        window.open(imageUrl, "_blank", "noopener,noreferrer");
-      }
+      setModalOpen(true);
 
       return imageUrl;
     } catch (err) {
       console.error(err);
-
-      // ❗ Ensure loader is closed on error
-      Swal.close();
-
-      Swal.fire({
-        icon: "error",
-        title: "Failed",
-        text: "Something went wrong while preparing the image.",
-      });
+      toast.error("Something went wrong while preparing the image.");
     }
   };
 
+
   const showCopyLinkAlert = async (imageUrl) => {
-    const result = await Swal.fire({
-      icon: "info",
+    setModalConfig({
       title: "Share Link",
-      text: "Click the button below to copy the shareable link.",
-      confirmButtonText: "Copy Link",
-      showCancelButton: true,
-      cancelButtonText: "Close",
-      preConfirm: async () => {
-        await navigator.clipboard.writeText(imageUrl);
-      },
+      message: "Click the button below to copy the link.",
+      actions: [
+        {
+          label: "Copy Link",
+          className: "bg-blue-600 text-white",
+          onClick: async () => {
+            try {
+              await navigator.clipboard.writeText(imageUrl);
+              toast.success("Copied to clipboard");
+              setModalOpen(false);
+            } catch (e) {
+              toast.error("Failed to copy");
+            }
+          }
+        }
+      ]
     });
 
-    if (result.isConfirmed) {
-      Swal.fire({
-        icon: "success",
-        title: "Copied",
-        text: "Image link copied to clipboard",
-        timer: 1500,
-        showConfirmButton: false,
-      });
-    }
+    setModalOpen(true);
+
   };
 
   const handleShare = async () => {
     const id = customizationId || custom._id;
 
-    if (isEditing && !isSaved) {
-      // 🔒 Show fullscreen loader
-      Swal.fire({
-        title: "Preparing your image",
-        text: "Please wait...",
-        allowOutsideClick: false,
-        allowEscapeKey: false,
-        didOpen: () => Swal.showLoading(),
-      });
-    }
+    
+
     try {
       let imageUrl = custom?.image_url;
+
       if (isEditing && !isSaved) {
-      
+        setIsPreparingImage(true);
         // 1️⃣ Generate + upload image
         const imageUrl = await generateAndUploadImage({
           id,
@@ -661,9 +648,8 @@ function FunCustomize () {
 
         setIsSaved(true);
         setIsEditing(false);
+        setIsPreparingImage(false);
       }
-      if (isEditing && !isSaved) Swal.close();
-
       // 3️⃣ Try native share
       if (navigator.share) {
         try {
@@ -685,15 +671,7 @@ function FunCustomize () {
       console.log("Customization image saved:", imageUrl);
     } catch (err) {
       console.error(err);
-
-      // ❗ Ensure loader is closed on error
-      Swal.close();
-
-      Swal.fire({
-        icon: "error",
-        title: "Failed",
-        text: "Saving or sharing failed. Please try again.",
-      });
+      toast.error("Saving or sharing failed. Please try again.");
     }
   };
 
@@ -774,21 +752,11 @@ function FunCustomize () {
       const updated = await res.json()
       setCustom(updated)
       // alert('Fun customization saved')
-      await Swal.fire({
-        icon: "success",
-        title: "Saved",
-        text: "Sporty customization saved successfully.",
-        confirmButtonText: "OK",
-      });
+      toast.success("Saved successfully");
     } catch (err) {
       console.error(err)
       // alert('Error saving fun customization')
-      await Swal.fire({
-        icon: "error",
-        title: "Failed",
-        text: "Error saving sporty customization.",
-        confirmButtonText: "Close",
-      });
+      toast.error("Error saving sporty customization.");
     } finally {
       setSaving(false)
     }
@@ -797,6 +765,9 @@ function FunCustomize () {
   // ---------------- UI ----------------
   return (
     <div style={pageWrapper}>
+      {(!firstRenderAllowed || isPreparingImage) && (
+        <LoaderOverlay />
+      )}
       <style>
         {`
           @font-face {
@@ -832,7 +803,7 @@ function FunCustomize () {
           )}
 
           {/* Components in order */}
-          {frameOverlay && (
+          {frameOverlay && firstRenderAllowed && (
             <img
               src={frameOverlay}
               alt='Frame'
@@ -840,7 +811,7 @@ function FunCustomize () {
               crossOrigin='anonymous'
             />
           )}
-          {basketOverlay && (
+          {basketOverlay && firstRenderAllowed && (
             <img
               src={basketOverlay}
               alt='Frame'
@@ -848,7 +819,7 @@ function FunCustomize () {
               crossOrigin='anonymous'
             />
           )}
-          {backrestOverlay && (
+          {backrestOverlay && firstRenderAllowed && (
             <img
               src={backrestOverlay}
               alt='Frame'
@@ -856,7 +827,7 @@ function FunCustomize () {
               crossOrigin='anonymous'
             />
           )}
-          {mudguardOverlay && (
+          {mudguardOverlay && firstRenderAllowed && (
             <img
               src={mudguardOverlay}
               alt='Mudguard'
@@ -864,7 +835,7 @@ function FunCustomize () {
               crossOrigin='anonymous'
             />
           )}
-          {gripOverlay && (
+          {gripOverlay && firstRenderAllowed && (
             <img
               src={gripOverlay}
               alt='Grip'
@@ -872,7 +843,7 @@ function FunCustomize () {
               crossOrigin='anonymous'
             />
           )}
-          {brakeOverlay && (
+          {brakeOverlay && firstRenderAllowed && (
             <img
               src={brakeOverlay}
               alt='Brake lever'
@@ -882,7 +853,7 @@ function FunCustomize () {
           )}
 
           {/* Stickers base */}
-          {carBase &&
+          {carBase && firstRenderAllowed &&
             (baseEnabled && baseHex ? (
               <TintMaskLayer src={carBase} colorHex={baseHex} />
             ) : (
@@ -892,10 +863,10 @@ function FunCustomize () {
                 style={overlayImg}
                 crossOrigin='anonymous'
               />
-          ))}
+            ))}
 
           {/* ✅ Tint ONLY after pick, else keep original */}
-          {carPaintMask &&
+          {carPaintMask && firstRenderAllowed &&
             (paintEnabled && paintHex ? (
               <TintMaskLayer src={carPaintMask} colorHex={paintHex} />
             ) : (
@@ -907,7 +878,7 @@ function FunCustomize () {
               />
             ))}
 
-          {carDecalMask &&
+          {carDecalMask && firstRenderAllowed &&
             (decalEnabled && decalHex ? (
               <TintMaskLayer src={carDecalMask} colorHex={decalHex} />
             ) : (
@@ -920,7 +891,7 @@ function FunCustomize () {
             ))}
 
           {/* ✅ BOTH always */}
-          {primaryMask &&
+          {primaryMask && firstRenderAllowed &&
             (primaryEnabled && primaryHex ? (
               <TintMaskLayer src={primaryMask} colorHex={primaryHex} />
             ) : (
@@ -932,7 +903,7 @@ function FunCustomize () {
               />
             ))}
 
-          {secondaryMask &&
+          {secondaryMask && firstRenderAllowed &&
             (secondaryEnabled && secondaryHex ? (
               <TintMaskLayer src={secondaryMask} colorHex={secondaryHex} />
             ) : (
@@ -944,7 +915,7 @@ function FunCustomize () {
               />
             ))}
 
-          {logo && (
+          {logo && firstRenderAllowed && (
             <img
               src={logo}
               alt='Logo'
@@ -960,7 +931,7 @@ function FunCustomize () {
           <div ref={taglineRef} style={taglineStyle}>
             {tagline}
           </div> */}
-          {baseImageLoaded && (
+          {baseImageLoaded && firstRenderAllowed &&(
             <>
               <div
                 ref={nameRef}
@@ -994,7 +965,7 @@ function FunCustomize () {
           {/* Header */}
           <div>
             <h2 style={{ margin: 0, fontSize: 18 }}>
-              {custom.brand} – {name}
+              {custom.brand}{name ? ` – ${name}` : ""}
             </h2>
             <div style={{ fontSize: 12, color: '#777' }}>{'Fun'}</div>
           </div>
@@ -1095,7 +1066,7 @@ function FunCustomize () {
               Sticker colours
             </div>
             <div style={{ display: 'flex', gap: '12px', overflowX: 'auto' }}>
-              {isBaseStickerColorAllowed && (
+              {isBaseStickerColorAllowed && firstRenderAllowed && (
                 <StickerRgbPicker
                   label="Car Base"
                   hex={baseHex}
@@ -1109,7 +1080,7 @@ function FunCustomize () {
                 />
               )}
 
-              {isPaintStickerColorAllowed && (
+              {isPaintStickerColorAllowed && firstRenderAllowed &&(
                 <StickerRgbPicker
                   label='Car paint'
                   hex={paintHex}
@@ -1123,7 +1094,7 @@ function FunCustomize () {
                 />
               )}
 
-              {isDecalStickerColorAllowed && (
+              {isDecalStickerColorAllowed && firstRenderAllowed &&(
                 <StickerRgbPicker
                   label='Car decal'
                   hex={decalHex}
@@ -1137,7 +1108,7 @@ function FunCustomize () {
                 />
               )}
 
-              {isPrimaryStickerColorAllowed && (
+              {isPrimaryStickerColorAllowed && firstRenderAllowed && (
                 <StickerRgbPicker
                   label='Primary colour'
                   hex={primaryHex}
@@ -1151,7 +1122,7 @@ function FunCustomize () {
                 />
               )}
 
-              {isSecondaryStickerColorAllowed && (
+              {isSecondaryStickerColorAllowed && firstRenderAllowed && (
                 <StickerRgbPicker
                   label='Secondary colour'
                   hex={secondaryHex}
