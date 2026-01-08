@@ -10,6 +10,9 @@ import LoaderOverlay from "../Components/LoaderOverlay";
 // import "@uiw/react-color-wheel/dist/index.css";
 import { FaSave, FaShareAlt } from 'react-icons/fa'
 
+const offscreenCanvas = document.createElement('canvas')
+const offscreenCtx = offscreenCanvas.getContext('2d')
+
 // ---------- Font ready cache (only once) ----------
 let fontsReadyPromise = null
 function waitForFontsOnce () {
@@ -30,9 +33,7 @@ function SportyCustomize () {
   const taglineRef = useRef(null)
   const imageCacheRef = useRef(new Map()) // cache for images
   const [baseImageLoaded, setBaseImageLoaded] = useState(false)
-  const offscreenCanvas = document.createElement('canvas')
-  const offscreenCtx = offscreenCanvas.getContext('2d')
-
+  
   // We expect these from Customization page
   const fromState = location.state || {}
   const initialCustomization = fromState.customization || null
