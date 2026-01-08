@@ -39,6 +39,8 @@ function FunCustomize () {
   const [theme, setTheme] = useState(null)
   const [loading, setLoading] = useState(!initialCustomization)
   const [saving, setSaving] = useState(false)
+  const offscreenCanvas = document.createElement('canvas')
+  const offscreenCtx = offscreenCanvas.getContext('2d')
 
   // --------- User editable fields ----------
   const [name, setName] = useState(initialCustomization?.userName || '')
