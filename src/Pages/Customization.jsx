@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { CUSTOM_API, THEME_API_BASE } from '../config/api'
 import { FaSave, FaShareAlt } from 'react-icons/fa'
+import { toast } from "react-hot-toast";
 
 function Customization () {
   const { slug } = useParams() // /kids/:slug  -> car-decal
@@ -28,6 +29,7 @@ function Customization () {
 
   // Loader for main WebP image
   const [isImageLoading, setIsImageLoading] = useState(false)
+  const [showName, setShowName] = useState(true);
 
   // ---------- Helpers ----------
   const preloadImage = src => {
@@ -439,7 +441,7 @@ function Customization () {
       }
 
       const baseImgEl = await loadImage(baseBikeImage)
-      if (!baseImgEl) return alert('Unable to load base image for download')
+      if (!baseImgEl) return toast.error('Unable to load base image for download')
 
       const canvas = document.createElement('canvas')
       const ctx = canvas.getContext('2d')
@@ -492,7 +494,7 @@ function Customization () {
       a.click()
     } catch (e) {
       console.error(e)
-      alert('Download failed')
+      toast.error('Download failed')
     }
   }
 
@@ -503,9 +505,9 @@ function Customization () {
     if (!navigator?.share) {
       try {
         await navigator.clipboard?.writeText(shareUrl)
-        alert('Share is not supported here. Link copied to clipboard 👍')
+        toast.error('Share is not supported here. Link copied to clipboard 👍')
       } catch {
-        alert('Share is not supported. Please copy the URL manually.')
+        toast.error('Share is not supported. Please copy the URL manually.')
       }
       return
     }
@@ -519,7 +521,7 @@ function Customization () {
     } catch (err) {
       if (err.name !== 'AbortError') {
         console.error('Share error:', err)
-        alert('Unable to open share options on this browser.')
+        toast.error('Unable to open share options on this browser.')
       }
     }
   }
@@ -590,7 +592,13 @@ function Customization () {
       navigate(target, { state: { customizationId } })
     } catch (err) {
       console.error(err)
-      alert('Error saving customization')
+      const backendError =
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        err.message ||
+        "Something went wrong";
+      
+      toast.error(backendError);
     } finally {
       setSaving(false)
     }
@@ -646,7 +654,7 @@ function Customization () {
           )}
 
           {/* Text */}
-           {!isImageLoading && (
+            {!isImageLoading && showName && (
               <>
                 <div ref={nameRef} style={nameStyle}>
                   {name}
@@ -801,9 +809,15 @@ function Customization () {
                   key={c.fileName || idx}
                   style={colorDot(c.colorCode, idx === frameColorIndex)}
                   title={c.colorName}
-                  onClick={() =>
-                    idx !== frameColorIndex && setFrameColorIndex(idx)
-                  }
+                  onClick={() => {
+                    if (idx !== frameColorIndex) {
+                      setFrameColorIndex(idx);
+                      setShowName(false);
+                       setTimeout(() => {
+                        setShowName(true);
+                      }, 300);
+                    }
+                  }}
                 />
               ))}
             </div>

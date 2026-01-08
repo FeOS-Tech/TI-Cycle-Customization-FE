@@ -29,6 +29,29 @@ export default function Home() {
     sessionStorage.setItem("userData", JSON.stringify(data));
   }, []);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const encodedData = params.get("data");
+    if (!encodedData) {
+      console.log('No data found');
+      return;
+    }
+    try {
+      // Decode from Base64
+      const data = JSON.parse(atob(encodedData));
+      console.log('Decoded data:', data);
+      if (!data.phone) {
+        console.log('Missing required fields');
+        return;
+      }
+      sessionStorage.setItem("userData", JSON.stringify(data));
+      // Clean URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } catch (error) {
+      console.error('Error decoding data:', error);
+    }
+  }, []);
+
   return (
     <section className='relative w-full overflow-hidden'
       style={{
