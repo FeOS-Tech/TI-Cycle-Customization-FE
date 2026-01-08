@@ -5,7 +5,7 @@ import Wheel from '@uiw/react-color-wheel'
 import { FaSave, FaShareAlt } from 'react-icons/fa';
 import AppModal from "../Components/AppModal";
 import LoaderOverlay from "../Components/LoaderOverlay";
-
+import { toast } from "react-hot-toast";
 // ---------- Font ready cache (only once) ----------
 let fontsReadyPromise = null
 function waitForFontsOnce () {
@@ -1157,6 +1157,11 @@ function FunCustomize () {
           </button>
         </div>
       </div>
+      <AppModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        {...modalConfig}
+      />
     </div>
   )
 }
