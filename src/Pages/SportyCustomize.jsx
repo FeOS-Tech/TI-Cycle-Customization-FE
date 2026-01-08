@@ -207,7 +207,7 @@ function SportyCustomize () {
         setLoading(false)
         setTimeout(() => {
           setFirstRenderAllowed(true);
-        }, 5000);
+        }, 3000);
       }
     }
 
