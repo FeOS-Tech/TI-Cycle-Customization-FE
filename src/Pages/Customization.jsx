@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { CUSTOM_API, THEME_API_BASE } from '../config/api'
-import { FaSave, FaShareAlt } from 'react-icons/fa'
+import { FaDownload, FaShareAlt } from 'react-icons/fa'
 import { toast } from "react-hot-toast";
 
 function Customization () {
@@ -199,15 +199,17 @@ function Customization () {
   const iconButton = {
     width: '32px',
     height: '32px',
-    // borderRadius: '50%',
-    // border: '1px solid rgba(0,0,0,0.2)',
-    // background: 'rgba(255,255,255,0.9)',
-    color: '#333',
+    borderRadius: '50%',
+    border: '1px solid rgba(0,0,0,0.2)',
+    background: 'rgba(255,255,255,0.9)',
+    color: '#86bc22',
+    fontSize: '16px',
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center'
-    // boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
+    justifyContent: 'center',
+    boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+    padding:'8px'
   }
 
   // const loaderOverlay = {
@@ -645,7 +647,7 @@ function Customization () {
       <div style={leftPanel} className="custom-left">
         <div style={iconBar}>
           <button style={iconButton} onClick={handleDownload} title='Download'>
-            <FaSave size={20} />
+            <FaDownload size={20} />
           </button>
           <button style={iconButton} onClick={handleShare} title='Share'>
             <FaShareAlt size={20} />

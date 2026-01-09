@@ -1259,7 +1259,7 @@ function FunCustomize () {
           <button
             type='button'
             style={{ ...primaryButton, background: '#555', marginTop: 6 }}
-            onClick={() => navigate(-1)}
+            onClick={() => navigate(`/kids/${custom.themeSlug}`)}
           >
             BACK
           </button>
