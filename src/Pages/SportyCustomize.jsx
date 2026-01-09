@@ -8,10 +8,8 @@ import LoaderOverlay from "../Components/LoaderOverlay";
 // import ShareIcon from '@mui/icons-material/Share';
 // import SimCardDownloadIcon from '@mui/icons-material/SimCardDownload';
 // import "@uiw/react-color-wheel/dist/index.css";
-import { FaSave, FaShareAlt } from 'react-icons/fa'
+import { FaDownload, FaShareAlt } from 'react-icons/fa'
 
-const offscreenCanvas = document.createElement('canvas')
-const offscreenCtx = offscreenCanvas.getContext('2d')
 
 // ---------- Font ready cache (only once) ----------
 let fontsReadyPromise = null
@@ -33,7 +31,6 @@ function SportyCustomize () {
   const taglineRef = useRef(null)
   const imageCacheRef = useRef(new Map()) // cache for images
   const [baseImageLoaded, setBaseImageLoaded] = useState(false)
-  
   // We expect these from Customization page
   const fromState = location.state || {}
   const initialCustomization = fromState.customization || null
@@ -878,7 +875,7 @@ function SportyCustomize () {
       <div style={leftPanel} className="sporty-left">
         <div style={iconBar}>
           <button style={iconButton} onClick={handleDownload} title='Download'>
-            <FaSave size={20} />
+            <FaDownload size={20} />
           </button>
           <button style={iconButton} onClick={handleShare} title='Share'>
             <FaShareAlt size={20} />
@@ -1385,6 +1382,10 @@ function hexToRgb (hex) {
       return
     }
 
+    const offscreenCanvas = document.createElement('canvas')
+    const offscreenCtx = offscreenCanvas.getContext('2d')
+
+
     offscreenCanvas.width = width
     offscreenCanvas.height = height
 
@@ -1562,16 +1563,17 @@ const iconBar = {
 const iconButton = {
   width: '32px',
   height: '32px',
-  // borderRadius: '50%',
-  // border: '1px solid rgba(0,0,0,0.2)',
-  // background: 'rgba(255,255,255,0.9)',
-  color: '#333',
-  // fontSize: '16px',
-  cursor: 'pointer5',
+  borderRadius: '50%',
+  border: '1px solid rgba(0,0,0,0.2)',
+  background: 'rgba(255,255,255,0.9)',
+  color: '#86bc22',
+  fontSize: '16px',
+  cursor: 'pointer',
   display: 'flex',
   alignItems: 'center',
-  justifyContent: 'center'
-  // boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
+  justifyContent: 'center',
+  boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+  padding:'8px'
 }
 
 const accordionCard = {

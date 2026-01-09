@@ -22,7 +22,7 @@ export default function AppModal({ open, title, message, actions = [], onClose }
             <button
               key={i}
               onClick={btn.onClick}
-              className={`w-full py-2 rounded-lg ${btn.className || "bg-gray-200"}`}
+              className={`w-full py-2 rounded-lg cursor-pointer ${btn.className || "bg-gray-200"}`}
             >
               {btn.label}
             </button>
@@ -30,7 +30,7 @@ export default function AppModal({ open, title, message, actions = [], onClose }
 
           <button
             onClick={onClose}
-            className="w-full py-2 rounded-lg bg-gray-100"
+            className="w-full py-2 rounded-lg bg-gray-100 cursor-pointer"
           >
             Close
           </button>

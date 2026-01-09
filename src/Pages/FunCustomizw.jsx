@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { CUSTOM_API, THEME_API_BASE,BACKEND_URL } from '../config/api'
 import Wheel from '@uiw/react-color-wheel'
-import { FaSave, FaShareAlt } from 'react-icons/fa';
+import { FaDownload, FaShareAlt } from 'react-icons/fa';
 import AppModal from "../Components/AppModal";
 import LoaderOverlay from "../Components/LoaderOverlay";
 import { toast } from "react-hot-toast";
@@ -39,8 +39,6 @@ function FunCustomize () {
   const [theme, setTheme] = useState(null)
   const [loading, setLoading] = useState(!initialCustomization)
   const [saving, setSaving] = useState(false)
-  const offscreenCanvas = document.createElement('canvas')
-  const offscreenCtx = offscreenCanvas.getContext('2d')
 
   // --------- User editable fields ----------
   const [name, setName] = useState(initialCustomization?.userName || '')
@@ -893,7 +891,7 @@ function FunCustomize () {
       <div style={leftPanel} className='fun-left'>
         <div style={iconBar}>
           <button style={iconButton} onClick={handleDownload} title='Download'>
-            <FaSave size={20} />
+            <FaDownload size={20} />
           </button>
           <button style={iconButton} onClick={handleShare} title='Share'>
             <FaShareAlt size={20} />
@@ -1475,6 +1473,9 @@ function drawTintedMask(ctx, img, hex, width, height) {
     return
   }
 
+  const offscreenCanvas = document.createElement('canvas')
+  const offscreenCtx = offscreenCanvas.getContext('2d')
+
   offscreenCanvas.width = width
   offscreenCanvas.height = height
 
@@ -1656,13 +1657,14 @@ const iconButton = {
   borderRadius: '50%',
   border: '1px solid rgba(0,0,0,0.2)',
   background: 'rgba(255,255,255,0.9)',
-  color: '#333',
+  color: '#86bc22',
   fontSize: '16px',
   cursor: 'pointer',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
+  boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+  padding:'8px'
 }
 
 const accordionCard = {
