@@ -817,11 +817,11 @@ function FunCustomize () {
 
   // ---------------- UI ----------------
   return (
-    <div style={pageWrapper}>
+    <div style={pageWrapper} className='fun-page'>
       {(!firstRenderAllowed || isPreparingImage) && (
         <LoaderOverlay />
       )}
-      <style>
+      {/* <style>
         {`
           @font-face {
             font-family: 'Tigershark Bold Italic';
@@ -830,10 +830,67 @@ function FunCustomize () {
             font-style: normal;
           }
         `}
+      </style> */}
+      <style>
+        {`
+          @font-face {
+            font-family: 'Tigershark Bold Italic';
+            src: url('/fonts/tigersharkboldital.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+          }
+
+          /* ===== DEFAULT: Laptop & above ===== */
+          .fun-page {
+            display: flex;
+            flex-direction: row;
+          }
+
+          /* ===== BELOW LAPTOP (Tablet & Mobile) ===== */
+          @media (max-width: 1023px) {
+            .fun-page {
+              flex-direction: column;
+            }
+            .fun-left {
+              min-height: 50vh;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            }
+
+          .fun-left > div {
+            margin-left: auto;
+            margin-right: auto;
+          }
+
+          /* Controls stay compact */
+          // .fun-right {
+          //   display: flex;
+          //   justify-content: center;
+          // }
+
+          /* Center the card content */
+          // .fun-right > div {
+          //   align-items: center;
+          //   text-align: center;
+          // }
+
+          /* Inputs & buttons should not stretch weirdly */
+          // .fun-right input,
+          // .fun-right button {
+          //   max-width: 320px;
+          // }
+
+          /* Wrap groups nicely */
+          // .fun-right div {
+          //   justify-content: center;
+          // }
+        `}
       </style>
 
+
       {/* LEFT: Preview */}
-      <div style={leftPanel}>
+      <div style={leftPanel} className='fun-left'>
         <div style={iconBar}>
           <button style={iconButton} onClick={handleDownload} title='Download'>
             <FaSave size={20} />
@@ -1013,7 +1070,7 @@ function FunCustomize () {
       </div>
 
       {/* RIGHT: Controls */}
-      <div style={rightPanel}>
+      <div style={rightPanel} className='fun-right'>
         <div style={rightCard}>
           {/* Header */}
           <div>

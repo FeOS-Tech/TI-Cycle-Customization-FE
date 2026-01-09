@@ -198,32 +198,64 @@ export default function Kids() {
     <div className="w-full bg-white text-gray-800">
       {/* HERO SECTION */}
       <section
-        className="w-full h-72 bg-cover bg-center flex items-center px-10 text-white"
+        // className="w-full h-72 bg-cover bg-center flex items-center px-10 text-white"
+        className="w-full h-48 sm:h-56 md:h-72 bg-cover bg-center flex items-center px-4 sm:px-8 md:px-10 text-white"
         style={{
           backgroundImage:
             "url('https://trackandtrail.in/cdn/shop/files/Kids_2_1500x300px.jpg?v=1739801626')",
         }}
       >
-        <h1 className="text-5xl font-bold">Kids</h1>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold">Kids</h1>
       </section>
 
       {/* THEME CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-10 p-14">
         {themes.map((theme) => (
+          // <div
+          //   key={theme.slug}
+          //   className="relative shadow rounded-xl overflow-hidden cursor-pointer hover:scale-[1.02] transition"
+          //   onClick={() => goToTheme(theme.slug)}
+          // >
+          //   <img
+          //     src={theme.image}
+          //     className="w-full h-40 object-cover"
+          //     alt={theme.label}
+          //   />
+          //   <h2 className="absolute bottom-4 left-4 text-3xl font-bold drop-shadow">
+          //     {theme.label}
+          //   </h2>
+          // </div>
           <div
             key={theme.slug}
-            className="relative shadow rounded-xl overflow-hidden cursor-pointer hover:scale-[1.02] transition"
+            className="
+              relative
+              shadow
+              rounded-xl
+              overflow-hidden
+              cursor-pointer
+              hover:scale-[1.02]
+              transition
+              bg-white
+            "
             onClick={() => goToTheme(theme.slug)}
           >
             <img
               src={theme.image}
-              className="w-full h-40 object-cover"
               alt={theme.label}
+              className="w-full aspect-[4/3] object-contain bg-white"
             />
-            <h2 className="absolute bottom-4 left-4 text-3xl font-bold drop-shadow">
+
+            <h2 className="
+              absolute
+              bottom-3 left-3
+              text-lg sm:text-xl md:text-2xl
+              font-bold
+              drop-shadow
+            ">
               {theme.label}
             </h2>
           </div>
+
         ))}
       </div>
 

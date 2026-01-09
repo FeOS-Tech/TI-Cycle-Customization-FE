@@ -235,6 +235,7 @@ function Customization () {
     height: '96px',
     objectFit: 'contain'
   }
+  
 
   // ---------- Fetch theme ----------
   useEffect(() => {
@@ -606,7 +607,7 @@ function Customization () {
 
   // ---------- UI ----------
   return (
-    <div style={pageWrapper}>
+    <div style={pageWrapper} className="custom-page">
       <style>
         {`
           @font-face {
@@ -615,11 +616,33 @@ function Customization () {
             font-weight: normal;
             font-style: normal;
           }
+           /* ===== DEFAULT: Laptop & above ===== */
+          .custom-page {
+            display: flex;
+            flex-direction: row;
+          }
+
+          /* ===== BELOW LAPTOP (Tablet & Mobile) ===== */
+          @media (max-width: 1023px) {
+            .custom-page {
+              flex-direction: column;
+            }
+
+            .custom-left,
+            .custom-right {
+              width: 100%;
+            }
+
+            .custom-right {
+              margin-top: 16px;
+            }
+          }
         `}
       </style>
 
       {/* LEFT PREVIEW */}
-      <div style={leftPanel}>
+      {/* <div style={leftPanel}> */}
+      <div style={leftPanel} className="custom-left">
         <div style={iconBar}>
           <button style={iconButton} onClick={handleDownload} title='Download'>
             <FaSave size={20} />
@@ -678,7 +701,7 @@ function Customization () {
       </div>
 
       {/* RIGHT PANEL */}
-      <div style={rightPanel}>
+      <div style={rightPanel} className='custom-right'>
         <div style={rightCard}>
           <h2 style={{ margin: 0 }}>{brandName}</h2>
           {/* <div style={{ fontSize: '12px', color: '#777' }}>

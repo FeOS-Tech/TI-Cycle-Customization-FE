@@ -801,7 +801,9 @@ function SportyCustomize () {
 
   // ---------------- UI ----------------
   return (
-    <div style={pageWrapper}>
+    // <div style={pageWrapper}>
+    <div style={pageWrapper} className="sporty-page">
+
       {(!firstRenderAllowed || isPreparingImage) && (
         <LoaderOverlay />
       )}
@@ -813,11 +815,67 @@ function SportyCustomize () {
             font-weight: normal;
             font-style: normal;
           }
+
+          /* ===== DEFAULT: Laptop & above ===== */
+          .sporty-page {
+            display: flex;
+            flex-direction: row;
+          }
+
+          /* ===== BELOW LAPTOP (Tablet & Mobile) ===== */
+          @media (max-width: 1023px) {
+            .sporty-page {
+              flex-direction: column;
+            }
+
+            // .sporty-left,
+            // .sporty-right {
+            //   width: 100%;
+            // }
+
+            // .sporty-right {
+            //   margin-top: 16px;
+            // }
+            .sporty-left {
+              min-height: 30vh;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            }
+
+          .sporty-left > div {
+            margin-left: auto;
+            margin-right: auto;
+          }
+
+          /* Controls stay compact */
+          // .sporty-right {
+          //   display: flex;
+          //   justify-content: center;
+          // }
+
+          /* Center the card content */
+          // .sporty-right > div {
+          //   align-items: center;
+          //   text-align: center;
+          // }
+
+          /* Inputs & buttons should not stretch weirdly */
+          // .sporty-right input,
+          // .sporty-right button {
+          //   max-width: 320px;
+          // }
+
+          /* Wrap groups nicely */
+          // .sporty-right div {
+          //   justify-content: center;
+          // }
         `}
       </style>
 
+
       {/* LEFT: Preview */}
-      <div style={leftPanel}>
+      <div style={leftPanel} className="sporty-left">
         <div style={iconBar}>
           <button style={iconButton} onClick={handleDownload} title='Download'>
             <FaSave size={20} />
@@ -981,7 +1039,7 @@ function SportyCustomize () {
       </div>
 
       {/* RIGHT: Controls */}
-      <div style={rightPanel}>
+      <div style={rightPanel} className="sporty-right">
         <div style={rightCard}>
           {/* Header */}
           <div>

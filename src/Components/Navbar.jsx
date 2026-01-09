@@ -51,7 +51,18 @@ export default function Navbar() {
       <img
         src={logo}
         alt="Logo"
-        className="w-100 h-10 cursor-pointer"
+        // className="w-100 h-10 md:h-12 lg:h-14 max-w-full object-contain cursor-pointer"
+        className="
+          h-6
+          sm:h-7
+          md:h-8        /* tablet */
+          lg:h-8        /* laptop */
+          xl:h-9        /* large screens */
+          w-auto
+          max-w-full
+          object-contain
+          cursor-pointer
+        "
         onClick={openWebsite}
       />
 

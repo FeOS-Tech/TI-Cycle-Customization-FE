@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import banner from "../assets/banner/banner1.jpg";
-
+import HomeButtons from "../Components/HomeButtons";
 export default function Home() {
   const navigate = useNavigate();
 
@@ -53,57 +53,82 @@ export default function Home() {
   }, []);
 
   return (
-    <section className='relative w-full overflow-hidden'
-      style={{
-        height: "100dvh",
-        backgroundImage: `url('${banner}')`,
-        backgroundSize: "100%",
-        backgroundRepeat:" no-repeat"
-      }}>
-      <div className='absolute bottom-25 w-full px-6'>
-        <div className='grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto'>
-          <button
-            onClick={() => navigate('/kids')}
-            className='group w-full rounded-2xl px-6 py-5 text-center
-           bg-white/75 backdrop-blur-md
-           shadow-[0_10px_30px_rgba(0,0,0,0.2)]
-           border border-white/40
-           hover:bg-white/90
-           hover:-translate-y-1 hover:shadow-[0_15px_40px_rgba(0,0,0,0.25)]
-           transition-all duration-300'
-          >
-            <h2 className='font-bold'>KIDS</h2>
-            <p className='text-sm text-gray-500'>(Ages 3–8)</p>
-          </button>
+    // <section className='relative w-full overflow-hidden'
+    //   style={{
+    //     height: "100dvh",
+    //     backgroundImage: `url('${banner}')`,
+    //     backgroundSize: "100%",
+    //     backgroundRepeat:" no-repeat"
+    //   }}>
+    //   <div className='absolute bottom-25 w-full px-6'>
+    //     <div className='grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto'>
+    //       <button
+    //         onClick={() => navigate('/kids')}
+    //         className='group w-full rounded-2xl px-6 py-5 text-center
+    //        bg-white/75 backdrop-blur-md
+    //        shadow-[0_10px_30px_rgba(0,0,0,0.2)]
+    //        border border-white/40
+    //        hover:bg-white/90
+    //        hover:-translate-y-1 hover:shadow-[0_15px_40px_rgba(0,0,0,0.25)]
+    //        transition-all duration-300'
+    //       >
+    //         <h2 className='font-bold'>KIDS</h2>
+    //         <p className='text-sm text-gray-500'>(Ages 3–8)</p>
+    //       </button>
 
-          <button
-            onClick={() => navigate('/mtb')}
-            className='group w-full rounded-2xl px-6 py-5 text-center
-           bg-white/75 backdrop-blur-md
-           shadow-[0_10px_30px_rgba(0,0,0,0.2)]
-           border border-white/40
-           hover:bg-white/90
-           hover:-translate-y-1 hover:shadow-[0_15px_40px_rgba(0,0,0,0.25)]
-           transition-all duration-300'
-          >
-            <h2 className='font-bold'>MTB</h2>
-            <p className='text-sm text-gray-500'>(Ages 8+)</p>
-          </button>
+    //       <button
+    //         onClick={() => navigate('/mtb')}
+    //         className='group w-full rounded-2xl px-6 py-5 text-center
+    //        bg-white/75 backdrop-blur-md
+    //        shadow-[0_10px_30px_rgba(0,0,0,0.2)]
+    //        border border-white/40
+    //        hover:bg-white/90
+    //        hover:-translate-y-1 hover:shadow-[0_15px_40px_rgba(0,0,0,0.25)]
+    //        transition-all duration-300'
+    //       >
+    //         <h2 className='font-bold'>MTB</h2>
+    //         <p className='text-sm text-gray-500'>(Ages 8+)</p>
+    //       </button>
 
-          <button
-            onClick={() => navigate('/inspired')}
-            className='group w-full rounded-2xl px-6 py-5 text-center bg-white/75 backdrop-blur-md
-           shadow-[0_10px_30px_rgba(0,0,0,0.2)]
-           border border-white/40
-           hover:bg-white/90
-           hover:-translate-y-1 hover:shadow-[0_15px_40px_rgba(0,0,0,0.25)]
-           transition-all duration-300'
-          >
-            <h2 className='font-bold'>Get Inspired</h2>
-            <p className='text-sm text-gray-500'>Explore designs</p>
-          </button>
+    //       <button
+    //         onClick={() => navigate('/inspired')}
+    //         className='group w-full rounded-2xl px-6 py-5 text-center bg-white/75 backdrop-blur-md
+    //        shadow-[0_10px_30px_rgba(0,0,0,0.2)]
+    //        border border-white/40
+    //        hover:bg-white/90
+    //        hover:-translate-y-1 hover:shadow-[0_15px_40px_rgba(0,0,0,0.25)]
+    //        transition-all duration-300'
+    //       >
+    //         <h2 className='font-bold'>Get Inspired</h2>
+    //         <p className='text-sm text-gray-500'>Explore designs</p>
+    //       </button>
+    //     </div>
+    //   </div>
+    // </section>
+
+ <section className="w-full">
+
+      {/* Banner */}
+      <div className="relative w-full">
+        <img
+          src={banner}
+          alt="Bike Design Studio"
+          className="w-full h-auto object-contain block"
+        />
+
+        {/* Desktop & Tablet buttons */}
+        <div className="hidden md:block absolute bottom-5 lg:bottom-10 xl:bottom-22 w-full px-6">
+          <HomeButtons navigate={navigate} />
         </div>
       </div>
+
+      {/* Mobile buttons */}
+      <div className="block md:hidden px-4 ">
+        <HomeButtons navigate={navigate} />
+      </div>
+
     </section>
+
+
   );
 }
