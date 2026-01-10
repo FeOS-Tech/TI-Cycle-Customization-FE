@@ -205,6 +205,9 @@ function SportyCustomize () {
         setLoading(false)
         setTimeout(() => {
           setFirstRenderAllowed(true);
+        }, 1000);
+        setTimeout(() => {
+          setSecondRenderAllowed(true);
         }, 3000);
       }
     }
@@ -801,7 +804,7 @@ function SportyCustomize () {
     // <div style={pageWrapper}>
     <div style={pageWrapper} className="sporty-page">
 
-      {(!firstRenderAllowed || isPreparingImage) && (
+      {(!secondRenderAllowed || isPreparingImage) && (
         <LoaderOverlay />
       )}
       <style>
@@ -1322,6 +1325,7 @@ function renderComponentSection ({
               )}
               title={c.colorName}
               onClick={() => onSelect(idx)}
+              className="cursor-pointer"
             />
           ))}
         </div>

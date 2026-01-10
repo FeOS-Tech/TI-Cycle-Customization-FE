@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { CUSTOM_API, THEME_API_BASE } from '../config/api'
 import { FaDownload, FaShareAlt } from 'react-icons/fa'
 import { toast } from "react-hot-toast";
+import loader from "../assets/loader.png";
 
 function Customization () {
   const { slug } = useParams() // /kids/:slug  -> car-decal
@@ -695,8 +696,9 @@ function Customization () {
           {isImageLoading && (
             // <div style={loaderOverlay}>
             <div style={{ ...loaderOverlay, opacity: isImageLoading ? 1 : 0 }}>
-              <span className="loader"></span>
-                {/* <img src='/cycle.gif' alt='Loading' style={loaderGif} /> */}
+              {/* <span className="loader"></span> */}
+              {/* <img src='/cycle.gif' alt='Loading' style={loaderGif} /> */}
+              <img src={loader} />
             </div>
           )}
         </div>

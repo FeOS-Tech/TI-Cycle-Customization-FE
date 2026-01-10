@@ -1,4 +1,5 @@
 import "./LoaderOverlay.css";
+import loader from "../assets/loader.png";
 export default function LoaderOverlay() {
   return (
     <div
@@ -15,8 +16,9 @@ export default function LoaderOverlay() {
         fontWeight: "600",
       }}
     >
-      <span className="loader"></span>
+      {/* <span className="loader"></span> */}
       {/* <span>Loading....</span> */}
+      <img src={loader} />
     </div>
   );
 }

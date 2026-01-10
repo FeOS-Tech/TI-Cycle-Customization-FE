@@ -141,6 +141,7 @@ function FunCustomize () {
   const [isSaved, setIsSaved] = useState(false);
   const [isEditing, setIsEditing] = useState(true);
   const [firstRenderAllowed, setFirstRenderAllowed] = useState(false);
+  const [secondRenderAllowed, setSecondRenderAllowed] = useState(false);
   const [isPreparingImage, setIsPreparingImage] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalConfig, setModalConfig] = useState({});
@@ -214,6 +215,9 @@ function FunCustomize () {
         setLoading(false);
         setTimeout(() => {
           setFirstRenderAllowed(true);
+        }, 1000);
+        setTimeout(() => {
+          setSecondRenderAllowed(true);
         }, 3000);
       }
     }
@@ -816,7 +820,7 @@ function FunCustomize () {
   // ---------------- UI ----------------
   return (
     <div style={pageWrapper} className='fun-page'>
-      {(!firstRenderAllowed || isPreparingImage) && (
+      {(!secondRenderAllowed || isPreparingImage) && (
         <LoaderOverlay />
       )}
       {/* <style>
@@ -1414,6 +1418,7 @@ function renderComponentSection ({
               )}
               title={c.colorName}
               onClick={() => onSelect(idx)}
+              className="cursor-pointer"
             />
           ))}
         </div>
